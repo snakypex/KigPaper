@@ -1,4 +1,4 @@
-From 53a9f4c8c640ae8bfca434c5d41d74d5cee34a53 Mon Sep 17 00:00:00 2001
+From 37b44b16892a47ae7da58e33e467eb7f4c7b0b2d Mon Sep 17 00:00:00 2001
 From: RoccoDev <roccodev.business@gmail.com>
 Date: Sun, 6 Sep 2020 13:41:03 +0200
 Subject: [PATCH] Backport from Spigot: Enforce cooldowns on book edits

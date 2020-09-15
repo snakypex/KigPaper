@@ -1,4 +1,4 @@
-From 263ea5152d9ffe3c1e8d1b6ccdf3e65cb99d86d6 Mon Sep 17 00:00:00 2001
+From 37cffdecfb20541e6cef8b9b0baf6c07a3454355 Mon Sep 17 00:00:00 2001
 From: RoccoDev <roccodev.business@gmail.com>
 Date: Sun, 6 Sep 2020 13:31:53 +0200
 Subject: [PATCH] Backport from Spigot: Enforce proper limits on books
