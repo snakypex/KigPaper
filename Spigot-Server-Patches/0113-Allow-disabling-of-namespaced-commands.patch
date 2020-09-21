@@ -1,4 +1,4 @@
-From c3bce160df52344e657dc6e73f82d6613d2ca64e Mon Sep 17 00:00:00 2001
+From e4d348e409698aee9c51025668b6f6de857529fb Mon Sep 17 00:00:00 2001
 From: RoccoDev <roccodev.business@gmail.com>
 Date: Tue, 15 Sep 2020 13:54:12 +0200
 Subject: [PATCH] Allow disabling of namespaced commands
