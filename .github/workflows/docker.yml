@@ -16,5 +16,5 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
           registry: docker.pkg.github.com
-          repository: ProjectKig/KigPaper/kig-paper
+          repository: projectkig/kigpaper/kig-paper
           tag_with_ref: true
