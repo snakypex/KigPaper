@@ -8,9 +8,10 @@ FROM openjdk:8-jdk-alpine
 RUN apk add --no-cache --update curl ca-certificates openssl git tar bash sqlite fontconfig \
     && adduser --disabled-password --home /home/container container
 USER container
-ENV USER=container HOME=/home/container STARTUP="java -Xms128M -Xmx2G -jar Paperclip.jar"
+ENV USER=container HOME=/home/container STARTUP="java -Xms128M -Xmx2G -jar /home/container/Paperclip.jar"
 WORKDIR /home/container
-COPY --from=0 ./Paperclip.jar /Paperclip.jar
+COPY --from=0 ./Paperclip.jar /home/container/Paperclip.jar
 COPY ./docker/entrypoint.sh /entrypoint.sh
 RUN echo "eula=true" > /home/container/eula.txt
+RUN mkdir -p /home/container/plugins
 CMD ["/bin/bash", "/entrypoint.sh"]
