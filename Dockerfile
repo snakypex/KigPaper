@@ -11,5 +11,4 @@ ENV USER=container HOME=/home/container
 WORKDIR /home/container
 COPY --from=0 ./Paperclip.jar /home/server/server.jar
 COPY ./docker/entrypoint.sh /entrypoint.sh
-VOLUME /home/container/maps
 CMD ["/bin/bash", "/entrypoint.sh"]
