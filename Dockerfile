@@ -4,7 +4,8 @@ RUN apk add --no-cache --update git bash patch && git config --global user.name 
 
 FROM openjdk:8-jdk-alpine
 RUN apk add --no-cache --update curl ca-certificates openssl git tar bash sqlite fontconfig \
-    && adduser --disabled-password --home /home/container container && mkdir -p /home/server/plugins && chown -R container:container /home/server
+    && adduser --disabled-password --home /home/container container && mkdir -p /home/server/plugins \
+    && chown -R container:container /home/server && echo eula=true > eula.txt
 USER container
 ENV USER=container HOME=/home/container
 WORKDIR /home/container
