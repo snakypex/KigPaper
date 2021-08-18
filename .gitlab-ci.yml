@@ -13,8 +13,7 @@ maven build:
     - git config --global user.email 'contact+ci-builds@playkig.com'
     - git submodule update --init
     - ./remap.sh &&./decompile.sh && ./init.sh && ./newApplyPatches.sh
-    - mvn -f ci_pom.xml package
     - cp server_ci_pom.xml PaperSpigot-Server/pom.xml
     - cp api_ci_pom.xml PaperSpigot-API/pom.xml
-    - mvn deploy -f ci_pom.xml -s ci_settings.xml
+    - mvn package deploy -f ci_pom.xml -s ci_settings.xml
 ...
