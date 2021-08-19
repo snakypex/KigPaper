@@ -1,4 +1,4 @@
-From 30f6f4dd4e504d165d88b3df8272ae97d59aad40 Mon Sep 17 00:00:00 2001
+From c08e02921dd0e6db9b7dac2e8ab91f16085b1633 Mon Sep 17 00:00:00 2001
 From: Archer <archer@beezig.eu>
 Date: Tue, 17 Aug 2021 23:31:46 +0200
 Subject: [PATCH] javadoc: Fix syntax and outdated refs
@@ -58,5 +58,5 @@ index d3767d2a8..4b5f87d2c 100644
       */
      public static boolean initializeEntityActivationState(Entity entity, SpigotWorldConfig config)
 -- 
-2.32.0
+2.31.1
 
