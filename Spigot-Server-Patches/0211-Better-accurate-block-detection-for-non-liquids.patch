@@ -1,0 +1,95 @@
+From 6e82aaa252042d208f7a104022994ac4146c1e9c Mon Sep 17 00:00:00 2001
+From: RoccoDev <hey@rocco.dev>
+Date: Sat, 2 Oct 2021 01:00:59 +0200
+Subject: [PATCH] Better accurate block detection for non-liquids
+
+
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index 22f984a75..d4fe69bc0 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -692,6 +692,20 @@ public abstract class Entity implements ICommandListener {
+                 }
+             }
+ 
++            // KigPaper start - run again if we need accurate detection at high falling speeds
++            if (PaperSpigotConfig.accurateBlockCollisions) {
++                try {
++                    this.checkBlockCollisions();
++                } catch (Throwable throwable) {
++                    CrashReport crashreport = CrashReport.a(throwable, "Checking entity block collision");
++                    CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Entity being checked for collision");
++
++                    this.appendEntityCrashDetails(crashreportsystemdetails);
++                    throw new ReportedException(crashreport);
++                }
++            }
++            // KigPaper end
++
+             this.a(d1, this.onGround, block, blockposition);
+             if (d6 != d0) {
+                 this.motX = 0.0D;
+@@ -844,36 +858,20 @@ public abstract class Entity implements ICommandListener {
+     }
+ 
+     protected void checkBlockCollisions() {
+-        // KigPaper - Start
+-        double motYAccount = this instanceof EntityPlayer && PaperSpigotConfig.accurateBlockCollisions ? this.motY : 0.0D; // KigPaper - account for falling speed
+-        boolean shouldCollideWithWeb = true, didCollide = false;
+-        Deque<Pair<IBlockData, BlockPosition>> websQueue = new ArrayDeque<>();
+-        // KigPaper - End
+-        BlockPosition blockposition = new BlockPosition(this.getBoundingBox().a + 0.001D, this.getBoundingBox().b + 0.001D + motYAccount, this.getBoundingBox().c + 0.001D);
++        BlockPosition blockposition = new BlockPosition(this.getBoundingBox().a + 0.001D, this.getBoundingBox().b + 0.001D, this.getBoundingBox().c + 0.001D);
+         BlockPosition blockposition1 = new BlockPosition(this.getBoundingBox().d - 0.001D, this.getBoundingBox().e - 0.001D, this.getBoundingBox().f - 0.001D);
+ 
+         if (this.world.areChunksLoadedBetween(blockposition, blockposition1)) {
+-            // KigPaper - Start
++            // KigPaper - Start - invert loop
+             for (int i = blockposition1.getY(); i >= blockposition.getY(); --i) {
++                // KigPaper - End
+                 for (int j = blockposition.getX(); j <= blockposition1.getX(); ++j) {
+                     for (int k = blockposition.getZ(); k <= blockposition1.getZ(); ++k) {
+-                        // KigPaper - End
+                         BlockPosition blockposition2 = new BlockPosition(j, i, k);
+                         IBlockData iblockdata = this.world.getType(blockposition2);
+ 
+                         try {
+-                            // KigPaper - Start
+-                            if (!PaperSpigotConfig.accurateBlockCollisions || !(this instanceof EntityPlayer)) {
+-                                iblockdata.getBlock().a(this.world, blockposition2, iblockdata, this);
+-                            } else {
+-                                if (shouldCollideWithWeb && iblockdata.getBlock().getMaterial() == Material.WEB) {
+-                                    websQueue.push(Pair.of(iblockdata, blockposition2));
+-                                } else {
+-                                    iblockdata.getBlock().a(this.world, blockposition2, iblockdata, this);
+-                                    if (iblockdata.getBlock().getMaterial().isSolid()) didCollide = true;
+-                                }
+-                            }
+-                            // KigPaper - End
++                            iblockdata.getBlock().a(this.world, blockposition2, iblockdata, this);
+                         } catch (Throwable throwable) {
+                             CrashReport crashreport = CrashReport.a(throwable, "Colliding entity with block");
+                             CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Block being collided with");
+@@ -883,19 +881,8 @@ public abstract class Entity implements ICommandListener {
+                         }
+                     }
+                 }
+-                // KigPaper - Start
+-                if (PaperSpigotConfig.accurateBlockCollisions && this instanceof EntityPlayer) {
+-                    if (didCollide) shouldCollideWithWeb = false;
+-                    if (shouldCollideWithWeb && !websQueue.isEmpty()) {
+-                        for (Pair<IBlockData, BlockPosition> p : websQueue) {
+-                            p.getLeft().getBlock().a(this.world, p.getRight(), p.getLeft(), this);
+-                        }
+-                    }
+-                }
+-                // KigPaper - End
+             }
+         }
+-
+     }
+ 
+     protected void a(BlockPosition blockposition, Block block) {
+-- 
+2.31.1
+
