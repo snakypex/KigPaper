@@ -1,0 +1,56 @@
+From 260a431b0751087e0652436abbca6603cf615fa8 Mon Sep 17 00:00:00 2001
+From: Archer <archer@beezig.eu>
+Date: Sat, 2 Oct 2021 14:30:56 +0200
+Subject: [PATCH] accurate-collisions: Move collision check
+
+This patch moves the extra collision check to the fall state update code
+to prevent triggering multiple events for things like portal entries.
+
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index d4fe69bc0..017719d3c 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -692,20 +692,6 @@ public abstract class Entity implements ICommandListener {
+                 }
+             }
+ 
+-            // KigPaper start - run again if we need accurate detection at high falling speeds
+-            if (PaperSpigotConfig.accurateBlockCollisions) {
+-                try {
+-                    this.checkBlockCollisions();
+-                } catch (Throwable throwable) {
+-                    CrashReport crashreport = CrashReport.a(throwable, "Checking entity block collision");
+-                    CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Entity being checked for collision");
+-
+-                    this.appendEntityCrashDetails(crashreportsystemdetails);
+-                    throw new ReportedException(crashreport);
+-                }
+-            }
+-            // KigPaper end
+-
+             this.a(d1, this.onGround, block, blockposition);
+             if (d6 != d0) {
+                 this.motX = 0.0D;
+@@ -919,6 +905,19 @@ public abstract class Entity implements ICommandListener {
+     protected void a(double d0, boolean flag, Block block, BlockPosition blockposition) {
+         if (flag) {
+             if (this.fallDistance > 0.0F) {
++                // KigPaper start - run again if we need accurate detection at high falling speeds
++                if (PaperSpigotConfig.accurateBlockCollisions) {
++                    try {
++                        this.checkBlockCollisions();
++                    } catch (Throwable throwable) {
++                        CrashReport crashreport = CrashReport.a(throwable, "Checking entity block collision");
++                        CrashReportSystemDetails crashreportsystemdetails = crashreport.a("Entity being checked for collision");
++
++                        this.appendEntityCrashDetails(crashreportsystemdetails);
++                        throw new ReportedException(crashreport);
++                    }
++                }
++                // KigPaper end
+                 if (block != null) {
+                     block.fallOn(this.world, blockposition, this, this.fallDistance);
+                 } else {
+-- 
+2.33.0
+
