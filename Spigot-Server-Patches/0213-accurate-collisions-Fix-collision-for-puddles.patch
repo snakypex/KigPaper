@@ -1,0 +1,28 @@
+From 8db582145e4080b39a80d593175a379a0c735862 Mon Sep 17 00:00:00 2001
+From: Archer <archer@beezig.eu>
+Date: Sun, 3 Oct 2021 04:07:21 +0200
+Subject: [PATCH] accurate-collisions: Fix collision for puddles
+
+This commit disables the accurate block collisions check for puddles of
+water. The motion value only has to be accounted for when falling
+through a floating layer of water, and also resetting the fall distance
+for water that's directly covering the floor incorrectly negates the
+damage for a rare client-side glitch that immediately makes you leave
+the water you just entered.
+
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index 017719d3c..094b5af3e 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -983,7 +983,7 @@ public abstract class Entity implements ICommandListener {
+                     for (int z = tmpZ; z <= tmpMaxZ; ++z) {
+                         block = world.getType(blockPosition.c(x, y, z)).getBlock();
+ 
+-                        if (block.getMaterial().isSolid()) {
++                        if (block.getMaterial().isSolid() || world.getType(blockPosition.c(x, Math.max(y - 1, 0), z)).getBlock().getMaterial().isSolid()) {
+                              useTmp = false;
+                          }
+                     }
+-- 
+2.33.0
+
