@@ -1,0 +1,101 @@
+From 1974e01804b9638f7b2ada16c5148cbc89512552 Mon Sep 17 00:00:00 2001
+From: RoccoDev <hey@rocco.dev>
+Date: Tue, 9 Nov 2021 20:05:57 +0100
+Subject: [PATCH] Make tracking range configurable per-entity
+
+
+diff --git a/src/main/java/net/minecraft/server/Entity.java b/src/main/java/net/minecraft/server/Entity.java
+index 094b5af3e..eea3c0fbf 100644
+--- a/src/main/java/net/minecraft/server/Entity.java
++++ b/src/main/java/net/minecraft/server/Entity.java
+@@ -29,6 +29,7 @@ import org.bukkit.plugin.PluginManager;
+ 
+ // PaperSpigot start
+ import org.github.paperspigot.PaperSpigotConfig;
++import org.spigotmc.TrackingRange;
+ import org.spigotmc.event.entity.EntityDismountEvent;
+ // PaperSpigot end
+ 
+@@ -147,12 +148,32 @@ public abstract class Entity implements ICommandListener {
+      */
+     private boolean wasOnFire;
+ 
++    // Customizable tracking range per-entity
++    private int customTrackingRange;
++
+     private SimpleMetadataStore metadataStore; // KigPaper - store metadata inside entity
+ 
+     public SimpleMetadataStore getMetadataStore(boolean init) {
+         if (init && metadataStore == null) metadataStore = new SimpleMetadataStore();
+         return metadataStore;
+     }
++
++    public int getCustomTrackingRange() {
++        return customTrackingRange;
++    }
++
++    public void setCustomTrackingRange(int customTrackingRange) {
++        this.customTrackingRange = customTrackingRange;
++
++        if (world instanceof WorldServer) {
++            EntityTracker tracker = ((WorldServer) world).getTracker();
++            EntityTrackerEntry entry = tracker.trackedEntities.get(id);
++            if (entry != null) {
++                // Update tracking range in current entity tracker entries
++                entry.b = TrackingRange.getEntityTrackingRange(this, customTrackingRange);
++            }
++        }
++    }
+     // KigPaper end
+ 
+     public int getId() {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+index 8ac1609af..5224d2f5d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+@@ -25,6 +25,7 @@ import org.bukkit.permissions.ServerOperator;
+ import org.bukkit.plugin.Plugin;
+ import org.bukkit.util.Vector;
+ import org.github.paperspigot.PaperSpigotConfig;
++import org.spigotmc.TrackingRange;
+ 
+ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+     private static final PermissibleBase perm = new PermissibleBase(new ServerOperator() {
+@@ -486,6 +487,18 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+         return getHandle().getCustomNameVisible();
+     }
+ 
++    // KigPaper start
++    @Override
++    public int getTrackingRange() {
++        return TrackingRange.getEntityTrackingRange(getHandle(), 0);
++    }
++
++    @Override
++    public void setTrackingRange(int trackingRange) {
++        getHandle().setCustomTrackingRange(trackingRange);
++    }
++    // KigPaper end
++
+     @Override
+     public void sendMessage(String message) {
+ 
+diff --git a/src/main/java/org/spigotmc/TrackingRange.java b/src/main/java/org/spigotmc/TrackingRange.java
+index 4bf4d2ac6..8ed96f014 100644
+--- a/src/main/java/org/spigotmc/TrackingRange.java
++++ b/src/main/java/org/spigotmc/TrackingRange.java
+@@ -21,6 +21,11 @@ public class TrackingRange
+      */
+     public static int getEntityTrackingRange(Entity entity, int defaultRange)
+     {
++        // KigPaper start
++        if (entity.getCustomTrackingRange() > 0) {
++            return entity.getCustomTrackingRange();
++        }
++        // KigPaper end
+         SpigotWorldConfig config = entity.world.spigotConfig;
+         if ( entity instanceof EntityPlayer )
+         {
+-- 
+2.33.1
+
