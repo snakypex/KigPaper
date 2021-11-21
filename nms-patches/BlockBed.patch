@@ -1,0 +1,43 @@
+--- a/net/minecraft/server/BlockBed.java
++++ b/net/minecraft/server/BlockBed.java
+@@ -1,5 +1,7 @@
+ package net.minecraft.server;
+ 
++import org.github.paperspigot.PaperSpigotConfig;
++
+ import java.util.Iterator;
+ import java.util.Random;
+ 
+@@ -31,7 +33,11 @@
+                     EntityHuman entityhuman1 = this.f(world, blockposition);
+ 
+                     if (entityhuman1 != null) {
+-                        entityhuman.b((IChatBaseComponent) (new ChatMessage("tile.bed.occupied", new Object[0])));
++                        if (PaperSpigotConfig.bedMessageActions && entityhuman instanceof EntityPlayer) {
++                            ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutChat(new ChatMessage("tile.bed.occupied"), (byte) 2));
++                        } else {
++                            entityhuman.b((IChatBaseComponent) (new ChatMessage("tile.bed.occupied", new Object[0])));
++                        }
+                         return true;
+                     }
+ 
+@@ -47,9 +53,17 @@
+                     return true;
+                 } else {
+                     if (entityhuman_enumbedresult == EntityHuman.EnumBedResult.NOT_POSSIBLE_NOW) {
+-                        entityhuman.b((IChatBaseComponent) (new ChatMessage("tile.bed.noSleep", new Object[0])));
++                        if (PaperSpigotConfig.bedMessageActions && entityhuman instanceof EntityPlayer) {
++                            ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutChat(new ChatMessage("tile.bed.noSleep"), (byte) 2));
++                        } else {
++                            entityhuman.b((IChatBaseComponent) (new ChatMessage("tile.bed.noSleep", new Object[0])));
++                        }
+                     } else if (entityhuman_enumbedresult == EntityHuman.EnumBedResult.NOT_SAFE) {
+-                        entityhuman.b((IChatBaseComponent) (new ChatMessage("tile.bed.notSafe", new Object[0])));
++                        if (PaperSpigotConfig.bedMessageActions && entityhuman instanceof EntityPlayer) {
++                            ((EntityPlayer) entityhuman).playerConnection.sendPacket(new PacketPlayOutChat(new ChatMessage("tile.bed.notSafe"), (byte) 2));
++                        } else {
++                            entityhuman.b((IChatBaseComponent) (new ChatMessage("tile.bed.notSafe", new Object[0])));
++                        }
+                     }
+ 
+                     return true;

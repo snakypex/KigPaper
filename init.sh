@@ -18,10 +18,10 @@ cd "$basedir/CraftBukkit"
 git checkout -B patched HEAD >/dev/null 2>&1
 rm -rf $cb
 mkdir -p $cb
-for file in $(ls nms-patches)
+for file in nms-patches/* "$basedir"/nms-patches/*
 do
-    patchFile="nms-patches/$file"
-    file="$(echo $file | cut -d. -f1).java"
+    patchFile="$file"
+    file="$(echo "$file" | rev | cut -d/ -f1 | rev | cut -d. -f1).java"
 
     echo "Patching $file < $patchFile"
     sed -i 's/\r//' "$nms/$file" > /dev/null

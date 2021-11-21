@@ -1,0 +1,39 @@
+From eed62cebd4088721b78c537a862a6f51094f11b8 Mon Sep 17 00:00:00 2001
+From: Archer <archer@beezig.eu>
+Date: Sun, 21 Nov 2021 19:42:53 +0100
+Subject: [PATCH] patch: Add bed-message-action option
+
+This commit adds an option to PaperSpigotConfig that allows users to
+toggle "You can only sleep at night" to be an action bar message instead
+of a chat message. This change only adds the configuration option, for
+the actual code change is included in an nms-patch as the BlockBed class
+was not yet available to anything after Bukkit in our pipeline.
+To apply the nms-patch, you'll have to apply the changes in `init.sh`
+and the `nms-patches/` directory first.
+
+diff --git a/src/main/java/org/github/paperspigot/PaperSpigotConfig.java b/src/main/java/org/github/paperspigot/PaperSpigotConfig.java
+index d2ae9cfca..9435cda0f 100644
+--- a/src/main/java/org/github/paperspigot/PaperSpigotConfig.java
++++ b/src/main/java/org/github/paperspigot/PaperSpigotConfig.java
+@@ -225,7 +225,7 @@ public class PaperSpigotConfig
+     }
+     // KigPaper start
+     public static float knockbackHorizontalMultiplier, knockbackVerticalMultiplier, knockbackHorizontalSprinting, knockbackVerticalSprinting, knockbackFriction;
+-    public static boolean betterVehicleHitboxes, nettyReadTimeout, forceConditionalAutoFlush, savePlayerFiles, enableBookDeserialization, accurateMoveTiming, accurateBlockCollisions;
++    public static boolean betterVehicleHitboxes, nettyReadTimeout, forceConditionalAutoFlush, savePlayerFiles, enableBookDeserialization, accurateMoveTiming, accurateBlockCollisions, bedMessageActions;
+     public static RegionFile.CompressionAlgorithm regionCompressionAlgorithm;
+ 
+     private static void knockbackHorizontalMultiplier() {
+@@ -260,6 +260,9 @@ public class PaperSpigotConfig
+     private static void accurateBlockCollisions() {
+         accurateBlockCollisions = getBoolean("accurate-block-collisions", false);
+     }
++    private static void bedMessageActions() {
++        bedMessageActions = getBoolean("bed-message-actions", false);
++    }
+     private static void regionCompressionAlgorithm() {
+         regionCompressionAlgorithm = RegionFile.CompressionAlgorithm.valueOf(getString("region-compression-algo", "ZLIB").toUpperCase(Locale.ROOT));
+     }
+-- 
+2.34.0
+
