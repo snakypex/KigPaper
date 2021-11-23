@@ -1,0 +1,21 @@
+From d385fe3d41c1acf8db3ded5fc7e53d9c32bc4567 Mon Sep 17 00:00:00 2001
+From: RoccoDev <hey@rocco.dev>
+Date: Tue, 23 Nov 2021 12:50:36 +0100
+Subject: [PATCH] Update entity head yaw on teleport
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+index 5224d2f5d..3a0bb483b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+@@ -253,6 +253,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+         // entity.world = ((CraftWorld) location.getWorld()).getHandle();
+         // Spigot end
+         entity.setLocation(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
++        entity.f(location.getYaw()); // KigPaper - update head yaw to keep consistency with /tp
+         entity.world.entityJoinedWorld(entity, false); // PaperSpigot - Fix issues with entities not being switched to their new chunk
+         // entity.setLocation() throws no event, and so cannot be cancelled
+         return true;
+-- 
+2.33.1
+
