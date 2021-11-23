@@ -1,0 +1,22 @@
+From 37b914fc65a6207d019e047a94febd4c90754286 Mon Sep 17 00:00:00 2001
+From: RoccoDev <hey@rocco.dev>
+Date: Tue, 23 Nov 2021 18:21:43 +0100
+Subject: [PATCH] Fix custom item despawn rate in unloaded chunks
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityItem.java b/src/main/java/net/minecraft/server/EntityItem.java
+index f0ab9458d..aeba5b978 100644
+--- a/src/main/java/net/minecraft/server/EntityItem.java
++++ b/src/main/java/net/minecraft/server/EntityItem.java
+@@ -163,7 +163,7 @@ public class EntityItem extends Entity {
+         this.lastTick = MinecraftServer.currentTick;
+         // CraftBukkit end
+ 
+-        if (!this.world.isClientSide && this.age >= world.spigotConfig.itemDespawnRate) { // Spigot
++        if (!this.world.isClientSide && this.age >= getDespawnRate()) { // Spigot
+             // CraftBukkit start - fire ItemDespawnEvent
+             if (org.bukkit.craftbukkit.event.CraftEventFactory.callItemDespawnEvent(this).isCancelled()) {
+                 this.age = 0;
+-- 
+2.33.1
+
