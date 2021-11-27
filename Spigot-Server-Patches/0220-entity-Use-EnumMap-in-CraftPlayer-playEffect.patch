@@ -1,0 +1,142 @@
+From aeaa1871d4c612f07e9059b4341b7474f73d7184 Mon Sep 17 00:00:00 2001
+From: Archer <archer@beezig.eu>
+Date: Sat, 27 Nov 2021 20:25:05 +0100
+Subject: [PATCH] entity: Use EnumMap in CraftPlayer#playEffect()
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This patch replaces a call to String#replace() inside a for loop that
+iterated over all available particles for every particle that's sent to
+a client with a simple lookup in an EnumMap. This should be orders of
+magnitude faster™.
+The performance boost introduced by this patch is most noticeable when
+using large amounts of particles.
+
+diff --git a/src/main/java/dev/rocco/kig/paper/impl/util/Dictionary.java b/src/main/java/dev/rocco/kig/paper/impl/util/Dictionary.java
+new file mode 100644
+index 00000000..192a3ac7
+--- /dev/null
++++ b/src/main/java/dev/rocco/kig/paper/impl/util/Dictionary.java
+@@ -0,0 +1,25 @@
++package dev.rocco.kig.paper.impl.util;
++
++import net.minecraft.server.EnumParticle;
++import org.bukkit.Effect;
++
++import java.util.EnumMap;
++
++public class Dictionary {
++    public static final EnumMap<Effect, EnumParticle> EFFECT_TO_PARTICLE = new EnumMap<>(Effect.class);
++
++    static {
++        String tmp;
++        for (EnumParticle p : EnumParticle.values()) {
++            tmp = p.b().replace("_", "");
++            for (Effect e : Effect.values()) {
++                // This is pretty much the original code, but we only call it once / effect & matching particle
++                if (e.getName() != null && e.getName().startsWith(tmp)) {
++                    EFFECT_TO_PARTICLE.put(e, p);
++                    break;
++                }
++            }
++        }
++    }
++
++}
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 3b3196a2..949c58a4 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -17,6 +17,7 @@ import java.util.function.Consumer;
+ import java.util.stream.Collectors;
+ 
+ import dev.rocco.kig.paper.impl.cheetah.SinkEntityPlayer;
++import dev.rocco.kig.paper.impl.util.Dictionary;
+ import dev.rocco.kig.paper.impl.util.SimpleMetadataStore;
+ import net.minecraft.server.*;
+ 
+@@ -1498,22 +1499,16 @@ public class CraftWorld implements World {
+             {
+                 net.minecraft.server.EnumParticle particle = null;
+                 int[] extra = null;
+-                for ( net.minecraft.server.EnumParticle p : net.minecraft.server.EnumParticle.values() )
+-                {
+-                    if ( effect.getName().startsWith( p.b().replace("_", "") ) )
++                if ((particle = Dictionary.EFFECT_TO_PARTICLE.get(effect)) != null) {
++                    if ( effect.getData() != null )
+                     {
+-                        particle = p;
+-                        if ( effect.getData() != null ) 
++                        if ( effect.getData().equals( org.bukkit.Material.class ) )
++                        {
++                            extra = new int[]{ id };
++                        } else
+                         {
+-                            if ( effect.getData().equals( org.bukkit.Material.class ) )
+-                            {
+-                                extra = new int[]{ id };
+-                            } else 
+-                            {
+-                                extra = new int[]{ (data << 12) | (id & 0xFFF) };
+-                            }
++                            extra = new int[]{ (data << 12) | (id & 0xFFF) };
+                         }
+-                        break;
+                     }
+                 }
+                 if ( extra == null )
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 26b6e7f2..582d7aa6 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
+ import com.google.common.collect.ImmutableSet;
+ import com.mojang.authlib.GameProfile;
+ import dev.rocco.kig.paper.api.event.DisconnectReason;
++import dev.rocco.kig.paper.impl.util.Dictionary;
+ import io.netty.buffer.Unpooled;
+ import net.md_5.bungee.api.chat.BaseComponent;
+ import net.minecraft.server.*;
+@@ -905,7 +906,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+             if (event.isCancelled()) {
+                 return;
+             }
+-            
++
+             getHandle().setSpectatorTarget(getHandle());
+             getHandle().playerInteractManager.setGameMode(WorldSettings.EnumGamemode.getById(mode.getValue()));
+             getHandle().fallDistance = 0;
+@@ -1550,22 +1551,16 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+             {
+                 net.minecraft.server.EnumParticle particle = null;
+                 int[] extra = null;
+-                for ( net.minecraft.server.EnumParticle p : net.minecraft.server.EnumParticle.values() )
+-                {
+-                    if ( effect.getName().startsWith( p.b().replace("_", "") ) )
++                if ((particle = Dictionary.EFFECT_TO_PARTICLE.get(effect)) != null) {
++                    if ( effect.getData() != null )
+                     {
+-                        particle = p;
+-                        if ( effect.getData() != null ) 
++                        if ( effect.getData().equals( Material.class ) )
++                        {
++                            extra = new int[]{ id };
++                        } else
+                         {
+-                            if ( effect.getData().equals( org.bukkit.Material.class ) )
+-                            {
+-                                extra = new int[]{ id };
+-                            } else 
+-                            {
+-                                extra = new int[]{ (data << 12) | (id & 0xFFF) };
+-                            }
++                            extra = new int[]{ (data << 12) | (id & 0xFFF) };
+                         }
+-                        break;
+                     }
+                 }
+                 if ( extra == null )
+-- 
+2.34.0
+
