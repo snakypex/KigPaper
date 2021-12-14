@@ -1,0 +1,31 @@
+From a28fdfe92ee5c7f7dca7de1b9ae80bdef3f91170 Mon Sep 17 00:00:00 2001
+From: RoccoDev <hey@rocco.dev>
+Date: Tue, 14 Dec 2021 18:07:16 +0100
+Subject: [PATCH] Add Guardian sounds in Sound
+
+
+diff --git a/src/main/java/org/bukkit/Sound.java b/src/main/java/org/bukkit/Sound.java
+index 09135300..77dbecf3 100644
+--- a/src/main/java/org/bukkit/Sound.java
++++ b/src/main/java/org/bukkit/Sound.java
+@@ -208,4 +208,17 @@ public enum Sound {
+     VILLAGER_IDLE,
+     VILLAGER_NO,
+     VILLAGER_YES,
++    // KigPaper start - Guardian sounds
++    GUARDIAN_IDLE,
++    GUARDIAN_IDLE_LAND,
++    GUARDIAN_IDLE_ELDER,
++    GUARDIAN_HIT,
++    GUARDIAN_HIT_LAND,
++    GUARDIAN_HIT_ELDER,
++    GUARDIAN_DEATH,
++    GUARDIAN_DEATH_LAND,
++    GUARDIAN_DEATH_ELDER,
++    GUARDIAN_FLOP,
++    GUARDIAN_CURSE
++    // KigPaper end
+ }
+-- 
+2.33.1
+
