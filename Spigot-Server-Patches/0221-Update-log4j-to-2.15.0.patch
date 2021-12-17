@@ -1,4 +1,4 @@
-From c095d85a1560c89d9152b3db3c00676198ccad31 Mon Sep 17 00:00:00 2001
+From 13ec6e02d06f920d3b9a75450adcc5a7aaa7e627 Mon Sep 17 00:00:00 2001
 From: RoccoDev <hey@rocco.dev>
 Date: Fri, 10 Dec 2021 12:49:37 +0100
 Subject: [PATCH] Update log4j to 2.15.0
@@ -41,7 +41,7 @@ index b7a581e13..6d099739b 100644
 +        </dependency>
          <!-- // KigPaper end -->
      </dependencies>
-
+ 
 @@ -179,7 +199,7 @@
              <plugin>
                  <groupId>org.apache.maven.plugins</groupId>
@@ -311,4 +311,6 @@ index 341eaa334..000000000
 -    }
 -
 -}
+-- 
 2.33.1
+
