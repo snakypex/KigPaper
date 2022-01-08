@@ -1,0 +1,28 @@
+From 016223829e86e57329f57d513df9afe48c89c620 Mon Sep 17 00:00:00 2001
+From: RoccoDev <hey@rocco.dev>
+Date: Sat, 8 Jan 2022 18:14:32 +0100
+Subject: [PATCH] Update log4j to 2.17.1
+
+
+diff --git a/pom.xml b/pom.xml
+index 4ce515446..53909e286 100644
+--- a/pom.xml
++++ b/pom.xml
+@@ -113,12 +113,12 @@
+         <dependency>
+             <groupId>org.apache.logging.log4j</groupId>
+             <artifactId>log4j-api</artifactId>
+-            <version>2.17.0</version>
++            <version>2.17.1</version>
+         </dependency>
+         <dependency>
+             <groupId>org.apache.logging.log4j</groupId>
+             <artifactId>log4j-core</artifactId>
+-            <version>2.17.0</version>
++            <version>2.17.1</version>
+         </dependency>
+         <!-- // KigPaper end -->
+     </dependencies>
+-- 
+2.33.1
+
