@@ -1,0 +1,86 @@
+From 84943041f000512ee18a68ad949df11b7a92a756 Mon Sep 17 00:00:00 2001
+From: RoccoDev <hey@rocco.dev>
+Date: Sat, 8 Jan 2022 18:10:44 +0100
+Subject: [PATCH] Better handling of oversized chat messages
+
+
+diff --git a/src/main/java/net/minecraft/server/PacketDataSerializer.java b/src/main/java/net/minecraft/server/PacketDataSerializer.java
+index e2eb30546..4a3c90a93 100644
+--- a/src/main/java/net/minecraft/server/PacketDataSerializer.java
++++ b/src/main/java/net/minecraft/server/PacketDataSerializer.java
+@@ -231,6 +231,28 @@ public class PacketDataSerializer extends ByteBuf {
+         }
+     }
+ 
++    // KigPaper start
++    public String readCappedString(int maxLength) {
++        int toRead = this.e();
++
++        if (toRead > maxLength * 4) {
++            throw new DecoderException("The received encoded string buffer length is longer than maximum allowed (" + toRead + " > " + maxLength * 4 + ")");
++        } else if (toRead < 0) {
++            throw new DecoderException("The received encoded string buffer length is less than zero! Weird string!");
++        } else {
++            int len = Math.min(toRead, maxLength);
++            String s = new String(this.readBytes(len).array(), Charsets.UTF_8);
++
++            int remaining = toRead - len;
++            if (remaining > 0) {
++                this.skipBytes(remaining);
++            }
++
++            return s;
++        }
++    }
++    // KigPaper end
++
+     public PacketDataSerializer a(String s) {
+         byte[] abyte = s.getBytes(Charsets.UTF_8);
+ 
+diff --git a/src/main/java/net/minecraft/server/PacketPlayInChat.java b/src/main/java/net/minecraft/server/PacketPlayInChat.java
+index 18358b432..6b71d973e 100644
+--- a/src/main/java/net/minecraft/server/PacketPlayInChat.java
++++ b/src/main/java/net/minecraft/server/PacketPlayInChat.java
+@@ -1,5 +1,7 @@
+ package net.minecraft.server;
+ 
++import org.github.paperspigot.PaperSpigotConfig;
++
+ import java.io.IOException;
+ 
+ public class PacketPlayInChat implements Packet<PacketListenerPlayIn> {
+@@ -17,7 +19,7 @@ public class PacketPlayInChat implements Packet<PacketListenerPlayIn> {
+     }
+ 
+     public void a(PacketDataSerializer packetdataserializer) throws IOException {
+-        this.a = packetdataserializer.c(100);
++        this.a = PaperSpigotConfig.kickChatMessageLength ? packetdataserializer.c(100) : packetdataserializer.readCappedString(100); // KigPaper
+     }
+ 
+     public void b(PacketDataSerializer packetdataserializer) throws IOException {
+diff --git a/src/main/java/org/github/paperspigot/PaperSpigotConfig.java b/src/main/java/org/github/paperspigot/PaperSpigotConfig.java
+index 9435cda0f..1bb822f59 100644
+--- a/src/main/java/org/github/paperspigot/PaperSpigotConfig.java
++++ b/src/main/java/org/github/paperspigot/PaperSpigotConfig.java
+@@ -225,7 +225,8 @@ public class PaperSpigotConfig
+     }
+     // KigPaper start
+     public static float knockbackHorizontalMultiplier, knockbackVerticalMultiplier, knockbackHorizontalSprinting, knockbackVerticalSprinting, knockbackFriction;
+-    public static boolean betterVehicleHitboxes, nettyReadTimeout, forceConditionalAutoFlush, savePlayerFiles, enableBookDeserialization, accurateMoveTiming, accurateBlockCollisions, bedMessageActions;
++    public static boolean betterVehicleHitboxes, nettyReadTimeout, forceConditionalAutoFlush, savePlayerFiles, enableBookDeserialization,
++            accurateMoveTiming, accurateBlockCollisions, bedMessageActions, kickChatMessageLength;
+     public static RegionFile.CompressionAlgorithm regionCompressionAlgorithm;
+ 
+     private static void knockbackHorizontalMultiplier() {
+@@ -266,5 +267,8 @@ public class PaperSpigotConfig
+     private static void regionCompressionAlgorithm() {
+         regionCompressionAlgorithm = RegionFile.CompressionAlgorithm.valueOf(getString("region-compression-algo", "ZLIB").toUpperCase(Locale.ROOT));
+     }
++    private static void kickChatMessageLength() {
++        kickChatMessageLength = getBoolean("kick-chat-message-length", false);
++    }
+     // KigPaper end
+ }
+-- 
+2.33.1
+
