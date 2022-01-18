@@ -9,6 +9,6 @@ USER container
 ARG git_ref
 ENV USER=container HOME=/home/container KIG_PLATFORM=j9
 WORKDIR /home/container
-COPY --from=builder ./PaperSpigot-Server/target/paperspigot*.jar /home/server/server.jar
+COPY --from=builder ./out/server.jar /home/server/server.jar
 COPY ./docker/entrypoint.sh /entrypoint.sh
 CMD ["/bin/bash", "/entrypoint.sh"]
