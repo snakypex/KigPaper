@@ -1,5 +1,5 @@
 ARG git_ref
-FROM docker.pkg.github.com/projectkig/kigpaper/kig-paper:${git_ref}_build AS builder
+FROM kig-paper:${git_ref}_build AS builder
 
 FROM ibmjava:8-jre-alpine
 RUN apk add --no-cache --update curl ca-certificates openssl git tar bash sqlite fontconfig \
