@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - ver/1.8.8
+      - docker-test
 jobs:
   push:
     name: Push image to registry
@@ -31,6 +32,7 @@ jobs:
       - name: Create build image
         uses: docker/build-push-action@v2
         with:
+          context: .
           file: docker/build.Dockerfile
           tags: docker.pkg.github.com/projectkig/kigpaper/kig-paper:${{ env.git_ref }}_build
           load: true
@@ -38,6 +40,7 @@ jobs:
       - name: Create HotSpot image
         uses: docker/build-push-action@v2
         with:
+          context: .
           push: ${{ github.event_name != 'pull_request' }}
           tags: docker.pkg.github.com/projectkig/kigpaper/kig-paper:${{ env.git_ref }}
           build-args: |
@@ -45,6 +48,7 @@ jobs:
       - name: Create J9 image
         uses: docker/build-push-action@v2
         with:
+          context: .
           file: docker/j9.Dockerfile
           tags: docker.pkg.github.com/projectkig/kigpaper/kig-paper:${{ env.git_ref }}_j9
           push: ${{ github.event_name != 'pull_request' }}
