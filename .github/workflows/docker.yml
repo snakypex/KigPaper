@@ -35,7 +35,7 @@ jobs:
         with:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-          registry: docker.pkg.github.com
+          registry: ghcr.io
       - name: Create build image
         uses: docker/build-push-action@v2
         with:
@@ -54,7 +54,7 @@ jobs:
         with:
           context: .
           push: ${{ github.event_name != 'pull_request' }}
-          tags: docker.pkg.github.com/projectkig/kigpaper/kig-paper:${{ env.git_ref }}
+          tags: ghcr.io/projectkig/kigpaper/kig-paper:${{ env.git_ref }}
           build-args: |
             git_ref=${{ env.git_ref }}
       - name: Create J9 image
@@ -62,7 +62,7 @@ jobs:
         with:
           context: .
           file: docker/j9.Dockerfile
-          tags: docker.pkg.github.com/projectkig/kigpaper/kig-paper:${{ env.git_ref }}_j9
+          tags: ghcr.io/projectkig/kigpaper/kig-paper:${{ env.git_ref }}_j9
           push: ${{ github.event_name != 'pull_request' }}
           build-args: |
             git_ref=${{ env.git_ref }}
