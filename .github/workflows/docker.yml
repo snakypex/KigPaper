@@ -42,7 +42,7 @@ jobs:
           context: .
           file: docker/build.Dockerfile
           tags: localhost:5000/kig-builder:${{ env.git_ref }}
-          load: true
+          push: true # local registry
           # push: ${{ github.event_name != 'pull_request' }}
       - name: Inspect
         run: |
