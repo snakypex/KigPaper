@@ -8,6 +8,11 @@ jobs:
   push:
     name: Push image to registry
     runs-on: ubuntu-latest
+    services:
+      registry:
+        image: registry:2
+        ports:
+          - 5000:5000
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -34,7 +39,7 @@ jobs:
         with:
           context: .
           file: docker/build.Dockerfile
-          tags: kig-paper:${{ env.git_ref }}_build
+          tags: localhost:5000/kig-builder:${{ env.git_ref }}
           load: true
           # push: ${{ github.event_name != 'pull_request' }}
       - name: Inspect
