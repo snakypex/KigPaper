@@ -1,5 +1,5 @@
 ARG git_ref
-FROM localhost:5000/kig-builder:${git_ref} AS builder
+FROM ghcr.io/projectkig/kigpaper/kig-paper-builder:${git_ref} AS builder
 
 FROM ibmjava:8-jre-alpine
 RUN apk add --no-cache --update curl ca-certificates openssl git tar bash sqlite fontconfig \

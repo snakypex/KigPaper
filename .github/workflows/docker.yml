@@ -3,16 +3,10 @@ on:
   push:
     branches:
       - ver/1.8.8
-      - docker-test
 jobs:
   push:
     name: Push image to registry
     runs-on: ubuntu-latest
-    services:
-      registry:
-        image: registry:2
-        ports:
-          - 5000:5000
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -20,11 +14,8 @@ jobs:
         uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
-        with:
-          driver-opts: network=host
       - name: Escape branch name
         run: |
-          ls -la
           ref="${github_ref////-}"
           echo "git_ref=$ref" >> $GITHUB_ENV
         env:
@@ -41,15 +32,10 @@ jobs:
         with:
           context: .
           file: docker/build.Dockerfile
-          tags: localhost:5000/kig-builder:${{ env.git_ref }}
-          push: true # local registry
-          # push: ${{ github.event_name != 'pull_request' }}
-      - name: Inspect
-        run: |
-          df -h
-          docker buildx du
-          docker images
+          tags: ghcr.io/projectkig/kigpaper/kig-paper-builder:${{ env.git_ref }}
+          push: ${{ github.event_name != 'pull_request' }}
       - name: Create HotSpot image
+        if: github.event_name != 'pull_request'
         uses: docker/build-push-action@v2
         with:
           context: .
@@ -58,6 +44,7 @@ jobs:
           build-args: |
             git_ref=${{ env.git_ref }}
       - name: Create J9 image
+        if: github.event_name != 'pull_request'
         uses: docker/build-push-action@v2
         with:
           context: .
