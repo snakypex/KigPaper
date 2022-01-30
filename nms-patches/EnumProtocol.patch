@@ -1,0 +1,50 @@
+diff --git b/net/minecraft/server/EnumProtocol.java a/net/minecraft/server/EnumProtocol.java
+index 7196025da..33f5dffd5 100644
+--- b/net/minecraft/server/EnumProtocol.java
++++ a/net/minecraft/server/EnumProtocol.java
+@@ -140,6 +140,8 @@ public enum EnumProtocol {
+     private static final Map<Class<? extends Packet>, EnumProtocol> h = Maps.newHashMap();
+     private final int i;
+     private final Map<EnumProtocolDirection, BiMap<Integer, Class<? extends Packet>>> j;
++    // KigPaper
++    private final Map<Class<? extends Packet>, Integer> specializedPackets = Maps.newHashMap();
+ 
+     private EnumProtocol(int i) {
+         this.j = Maps.newEnumMap(EnumProtocolDirection.class);
+@@ -151,7 +153,7 @@ public enum EnumProtocol {
+ 
+         if (object == null) {
+             object = HashBiMap.create();
+-            this.j.put(enumprotocoldirection, object);
++            this.j.put(enumprotocoldirection, (BiMap<Integer, Class<? extends Packet>>) object);
+         }
+ 
+         if (((BiMap) object).containsValue(oclass)) {
+@@ -166,7 +168,13 @@ public enum EnumProtocol {
+     }
+ 
+     public Integer a(EnumProtocolDirection enumprotocoldirection, Packet packet) {
+-        return (Integer) ((BiMap) this.j.get(enumprotocoldirection)).inverse().get(packet.getClass());
++        // KigPaper - start
++        Integer ret = (Integer) ((BiMap) this.j.get(enumprotocoldirection)).inverse().get(packet.getClass());
++        if (enumprotocoldirection == EnumProtocolDirection.CLIENTBOUND && ret == null) {
++            ret = specializedPackets.get(packet.getClass());
++        }
++        return ret;
++        // KigPaper - end
+     }
+ 
+     public Packet a(EnumProtocolDirection enumprotocoldirection, int i) throws IllegalAccessException, InstantiationException {
+@@ -191,6 +199,12 @@ public enum EnumProtocol {
+         this(i);
+     }
+ 
++    // KigPaper - start
++    public void registerSpecializedPacket(Class<? extends Packet> packetClass, int packetId) {
++        specializedPackets.put(packetClass, packetId);
++    }
++    // KigPaper - end
++
+     static {
+         EnumProtocol[] aenumprotocol = values();
+         int i = aenumprotocol.length;
