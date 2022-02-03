@@ -1,0 +1,55 @@
+From 7fec7979dbe313e5d601f11106d30b49df694f39 Mon Sep 17 00:00:00 2001
+From: RoccoDev <hey@rocco.dev>
+Date: Sun, 16 Jan 2022 17:01:42 +0100
+Subject: [PATCH] Make creeper explosions consistent with TNTs
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityCreeper.java b/src/main/java/net/minecraft/server/EntityCreeper.java
+index fecf94da1..ef2e862bb 100644
+--- a/src/main/java/net/minecraft/server/EntityCreeper.java
++++ b/src/main/java/net/minecraft/server/EntityCreeper.java
+@@ -3,6 +3,7 @@ package net.minecraft.server;
+ // CraftBukkit start
+ import org.bukkit.craftbukkit.event.CraftEventFactory;
+ import org.bukkit.event.entity.ExplosionPrimeEvent;
++import org.github.paperspigot.PaperSpigotConfig;
+ // CraftBukkit end
+ 
+ public class EntityCreeper extends EntityMonster {
+@@ -213,7 +214,10 @@ public class EntityCreeper extends EntityMonster {
+             ExplosionPrimeEvent event = new ExplosionPrimeEvent(this.getBukkitEntity(), this.explosionRadius * f, false);
+             this.world.getServer().getPluginManager().callEvent(event);
+             if (!event.isCancelled()) {
+-                this.world.createExplosion(this, this.locX, this.locY, this.locZ, event.getRadius(), event.getFire(), flag);
++                // KigPaper start - fix carpets/layers nullifying explosions, keep consistency with TNTs
++                double y = PaperSpigotConfig.entityExplosionConsistency ? this.locY + (0.98D / 2D) : this.locY;
++                // KigPaper end
++                this.world.createExplosion(this, this.locX, y, this.locZ, event.getRadius(), event.getFire(), flag);
+                 this.die();
+             } else {
+                 fuseTicks = 0;
+diff --git a/src/main/java/org/github/paperspigot/PaperSpigotConfig.java b/src/main/java/org/github/paperspigot/PaperSpigotConfig.java
+index 1bb822f59..6b6c0c1c5 100644
+--- a/src/main/java/org/github/paperspigot/PaperSpigotConfig.java
++++ b/src/main/java/org/github/paperspigot/PaperSpigotConfig.java
+@@ -226,7 +226,7 @@ public class PaperSpigotConfig
+     // KigPaper start
+     public static float knockbackHorizontalMultiplier, knockbackVerticalMultiplier, knockbackHorizontalSprinting, knockbackVerticalSprinting, knockbackFriction;
+     public static boolean betterVehicleHitboxes, nettyReadTimeout, forceConditionalAutoFlush, savePlayerFiles, enableBookDeserialization,
+-            accurateMoveTiming, accurateBlockCollisions, bedMessageActions, kickChatMessageLength;
++            accurateMoveTiming, accurateBlockCollisions, bedMessageActions, kickChatMessageLength, entityExplosionConsistency;
+     public static RegionFile.CompressionAlgorithm regionCompressionAlgorithm;
+ 
+     private static void knockbackHorizontalMultiplier() {
+@@ -270,5 +270,8 @@ public class PaperSpigotConfig
+     private static void kickChatMessageLength() {
+         kickChatMessageLength = getBoolean("kick-chat-message-length", false);
+     }
++    private static void entityExplosionConsistency() {
++        entityExplosionConsistency = getBoolean("entity-explosion-consistency", true);
++    }
+     // KigPaper end
+ }
+-- 
+2.34.1
+
