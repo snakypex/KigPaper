@@ -1,5 +1,6 @@
-Contributing to PaperSpigot
-==========================
+When contributing to KigPaper, please follow the original PaperSpigot guidelines listed below.
+
+# Contributing to PaperSpigot
 PaperSpigot has a very lenient policy towards PRs, but would prefer that you try and adhere to the following guidelines.
 
 ## Understanding Patches
@@ -56,11 +57,11 @@ While we will fix minor formatting issues, you should stick to the guide below w
 
 ## Formatting
 All modifications to non-PaperSpigot files should be marked
-- Multi line changes start with `// PaperSpigot start` and end with `// PaperSpigot end`
-- You can put a messages with a change if it isn't obvious, like this: `// PaperSpigot start - reason
+- Multi line changes start with `// KigPaper start` and end with `// PaperSpigot end`
+- You can put a messages with a change if it isn't obvious, like this: `// KigPaper start - reason`
   - Should generally be about the reason the change was made, what it was before, or what the change is
-  - Multi-line messages should start with `// PaperSpigot start` and use `/* Multi line message here */` for the message itself
-- Single line changes should have `// PaperSpigot` or `// PaperSpigot - reason`
+  - Multi-line messages should start with `// KigPaper start` and use `/* Multi line message here */` for the message itself
+- Single line changes should have `// KigPaper` or `// KigPaper - reason`
 - For example:
 ````java
 entity.getWorld().dontbeStupid(); // PaperSpigot - was beStupid() which is bad

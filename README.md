@@ -1,32 +1,35 @@
-PaperSpigot [![CI Status](http://ci.destroystokyo.com/buildStatus/icon?job=PaperSpigot)](http://ci.destroystokyo.com/job/PaperSpigot/)
-===========
+# KigPaper ![CI Status](https://github.com/ProjectKig/KigPaper/actions/workflows/docker.yml/badge.svg)
+KigPaper is a fork of 1.8.8 [Paper](https://github.com/PaperMC/Paper) focused on improving stability, fixing bugs, and increasing security.
 
-High performance Spigot fork that aims to fix gameplay and mechanics inconsistencies.
+## Production-readiness
+KigPaper aims to be a stable, yet performant, server software. It fixes many vanilla and CraftBukkit inconsistencies, though any patches that alter vanilla
+gameplay are made configurable.
 
-[IRC Support and Project Discussion](http://irc.spi.gt/iris/?channels=PaperSpigot)
+No guarantees are made regarding plugin compatibility. For the best experience, consider modeling your server stack
+around KigPaper.
 
+KigPaper is currently being used in a production environment on [KIG Network](https://playkig.com).
 
+## Building
+After cloning the project, run
+```shell
+./build.sh
+```
+to generate the server JAR.  
+Once it's done, you'll have a `Paperclip.jar` file in the project directory.
 
+### Running benchmarks
+To run benchmarks, first build the server normally, then run these commands:
+```shell
+mvn install -P benchmarks
+java -jar Benchmarks/target/paper-benchmarks.jar
+```
 
-How To (Server Admins)
-------
-Download a copy of Paperclip.jar from our buildserver here:
-https://ci.destroystokyo.com/job/PaperSpigot/
+## License
+We do not own the original Minecraft server code, and we're not affiliated with Microsoft or Mojang.  
+All patches (including the ones from the original Spigot and Paper) are licensed under the [GPLv3](https://www.gnu.org/licenses/gpl-3.0.html).
 
-Run the PaperClip jar directly from your server. Just like old times
-
-PaperSpigot requires **JRE 8** or above.
-
-
-How To (Compiling From Source)
-------
-To compile PaperSpigot, you need JDK8, maven, and an internet connection.
-
-Clone this repo, run ./build.sh from *bash*, get files.
-
-Special Thanks To:
--------------
-
-![YourKit-Logo](https://www.yourkit.com/images/yklogo.png)
-
-[YourKit](http://www.yourkit.com/), makers of the outstanding java profiler, support open source projects of all kinds with their full featured [Java](https://www.yourkit.com/java/profiler/index.jsp) and [.NET](https://www.yourkit.com/.net/profiler/index.jsp) application profilers. We thank them for granting PaperSpigot an OSS license so that we can make our software the best it can be.
+## Special Thanks
+This project includes some patches from:
++ [SportPaper](https://github.com/Electroid/SportPaper)
++ [FlamePaper](https://github.com/2lstudios-mc/FlamePaper)
