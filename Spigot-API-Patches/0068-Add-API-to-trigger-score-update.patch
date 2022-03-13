@@ -1,0 +1,43 @@
+From 292f5e94aea9523febda497f2732a000c5712bca Mon Sep 17 00:00:00 2001
+From: RoccoDev <hey@rocco.dev>
+Date: Sun, 13 Mar 2022 18:17:31 +0100
+Subject: [PATCH] Add API to trigger score update
+
+
+diff --git a/src/main/java/org/bukkit/scoreboard/ScoreboardManager.java b/src/main/java/org/bukkit/scoreboard/ScoreboardManager.java
+index 00b67a18..f0549bf2 100644
+--- a/src/main/java/org/bukkit/scoreboard/ScoreboardManager.java
++++ b/src/main/java/org/bukkit/scoreboard/ScoreboardManager.java
+@@ -1,6 +1,9 @@
+ package org.bukkit.scoreboard;
+ 
++import org.bukkit.entity.Player;
++
+ import java.lang.ref.WeakReference;
++import java.util.Collection;
+ 
+ /**
+  * Manager of Scoreboards
+@@ -26,4 +29,19 @@ public interface ScoreboardManager {
+      * @see WeakReference
+      */
+     Scoreboard getNewScoreboard();
++
++    // KigPaper start
++    /**
++     * Updates scores in some scoreboards based on the given criteria.
++     *
++     * <p>Example: to send Notch's health to <pre>player1</pre> and <pre>player2</pre>, you can use:
++     * <pre>updateScoresFor(Criterias.HEALTH, "Notch", Arrays.asList(player1, player2))</pre>
++     *
++     * @param criteria determines which score to update, must be a valid criteria name, see {@link Criterias}.
++     * @param scoreboardEntry the entries to update scores for, usually the player name.
++     *                        See {@link Scoreboard#getScores(String)}.
++     * @param receivers the players that should receive the update
++     */
++    void updateScoresFor(String criteria, Collection<String> scoreboardEntry, Collection<Player> receivers);
++    // KigPaper end
+ }
+-- 
+2.34.1
+
