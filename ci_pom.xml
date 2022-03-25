@@ -18,10 +18,26 @@
     <description>Parent project for all PaperSpigot modules.</description>
     <url>https://github.com/PaperSpigot/Spigot</url>
 
-    <modules>
-        <module>PaperSpigot-Server</module>
-        <module>PaperSpigot-API</module>
-    </modules>
+    <profiles>
+        <profile>
+            <id>server</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <modules>
+                <module>PaperSpigot-Server</module>
+                <module>PaperSpigot-API</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>benchmarks</id>
+            <modules>
+                <module>PaperSpigot-Server</module>
+                <module>PaperSpigot-API</module>
+                <module>Benchmarks</module>
+            </modules>
+        </profile>
+    </profiles>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
