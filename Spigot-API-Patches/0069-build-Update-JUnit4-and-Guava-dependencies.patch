@@ -1,0 +1,67 @@
+From 1659f35f9a70f0752f6cc7c91a2b620f67830b26 Mon Sep 17 00:00:00 2001
+From: Archer <archer@beezig.eu>
+Date: Thu, 24 Mar 2022 05:19:24 +0100
+Subject: [PATCH] build: Update JUnit4 and Guava dependencies
+
+This commit updates JUnit4 to prevent possible information exposure with
+the `TemporaryFolder` test rule. The project currently uses this rule,
+but due to the nature of a public free software project, the data
+exposed by this vulnerability is not of great value to a potential local
+attacker. As the dependency was declared with scope `test`, running
+servers weren't affected by the vulnerability.
+
+CVE: CVE-2020-15250
+GHSA: GHSA-269g-pwp5-87pp
+
+Additionally, this commit updates Guava to prevent two possible
+vulnerabilities:
+
+Deserializing attacker-provided data could lead to a denial of service
+because `AtomicDoubleArray` when serialized with Java serialization and
+`CompoundOrdering` when serialized with GWT serialization performed no
+appropriate checks whether the user-provided data has a reasonable size.
+KigPaper doesn't seem affected by this vulnerability, but given that
+Guava is a runtime dependency, it should still be updated.
+
+CVE: CVE-2018-10237
+
+Temporary directories created with
+`com.google.common.io.Files#createTempDir()` would be readable by an
+attacker with local access to the system. While updating the dependency
+does *not* fix this security vulnerability, the method has been
+deprecated in Guava 30. It is advised to "use
+`java.nio.file.Files#createTempDirectory`, transforming it to a `File`
+using `java.nio.file.Path#toFile()` if needed". KigPaper doesn't seem
+affected by this vulnerability as the method in question is never
+invoked. Nevertheless, this dependency should be updated to hint the
+projects reusing the server's Guava library to switch to the safe
+alternative mentioned in the deprecation notice (and quoted in this
+commit).
+
+CVE: CVE-2020-8908
+
+diff --git a/pom.xml b/pom.xml
+index 6c22adc2..8e88aa3a 100644
+--- a/pom.xml
++++ b/pom.xml
+@@ -71,7 +71,7 @@
+         <dependency>
+             <groupId>com.google.guava</groupId>
+             <artifactId>guava</artifactId>
+-            <version>17.0</version>
++            <version>31.1-jre</version>
+             <scope>compile</scope>
+         </dependency>
+         <!-- bundled with Minecraft, should be kept in sync -->
+@@ -104,7 +104,7 @@
+         <dependency>
+             <groupId>junit</groupId>
+             <artifactId>junit</artifactId>
+-            <version>4.12</version>
++            <version>4.13.2</version>
+             <scope>test</scope>
+         </dependency>
+         <dependency>
+-- 
+2.35.1
+

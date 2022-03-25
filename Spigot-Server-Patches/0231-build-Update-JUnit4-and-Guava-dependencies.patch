@@ -1,0 +1,202 @@
+From 49f08f28086bb9a6336a4f861790ae3a6223ac5c Mon Sep 17 00:00:00 2001
+From: Archer <archer@beezig.eu>
+Date: Thu, 24 Mar 2022 04:48:31 +0100
+Subject: [PATCH] build: Update JUnit4 and Guava dependencies
+
+This commit updates JUnit4 to prevent possible information exposure with
+the `TemporaryFolder` test rule. The project currently uses this rule,
+but due to the nature of a public free software project, the data
+exposed by this vulnerability is not of great value to a potential local
+attacker. As the dependency was declared with scope `test`, running
+servers weren't affected by the vulnerability. Nevertheless, this
+vulnerability should be fixed.
+
+CVE: CVE-2020-15250
+GHSA: GHSA-269g-pwp5-87pp
+
+Additionally, this commit applies necessary changes for the updated
+Guava version used in PaperSpigot-API.
+
+diff --git a/pom.xml b/pom.xml
+index 53909e286..f4047f9a5 100644
+--- a/pom.xml
++++ b/pom.xml
+@@ -11,7 +11,7 @@
+     <properties>
+         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+         <api.version>unknown</api.version>
+-        <junit.version>4.11</junit.version>
++        <junit.version>4.13.2</junit.version>
+         <minecraft.version>1.8.8</minecraft.version>
+         <minecraft_version>1_8_R3</minecraft_version>
+         <buildtag.prefix>git-Bukkit-</buildtag.prefix>
+diff --git a/src/main/java/net/minecraft/server/BaseBlockPosition.java b/src/main/java/net/minecraft/server/BaseBlockPosition.java
+index a685e0812..678426d48 100644
+--- a/src/main/java/net/minecraft/server/BaseBlockPosition.java
++++ b/src/main/java/net/minecraft/server/BaseBlockPosition.java
+@@ -1,6 +1,6 @@
+ package net.minecraft.server;
+ 
+-import com.google.common.base.Objects;
++import com.google.common.base.MoreObjects; // KigPaper
+ 
+ public class BaseBlockPosition implements Comparable<BaseBlockPosition> {
+ 
+@@ -80,7 +80,7 @@ public class BaseBlockPosition implements Comparable<BaseBlockPosition> {
+     }
+ 
+     public String toString() {
+-        return Objects.toStringHelper(this).add("x", this.getX()).add("y", this.getY()).add("z", this.getZ()).toString();
++        return MoreObjects.toStringHelper(this).add("x", this.getX()).add("y", this.getY()).add("z", this.getZ()).toString(); // KigPaper
+     }
+ 
+     // Paperspigot - Signature change, Object -> BaseBlockPosition
+diff --git a/src/main/java/net/minecraft/server/BlockTripwireHook.java b/src/main/java/net/minecraft/server/BlockTripwireHook.java
+index 0ad4a20f3..2534043d8 100644
+--- a/src/main/java/net/minecraft/server/BlockTripwireHook.java
++++ b/src/main/java/net/minecraft/server/BlockTripwireHook.java
+@@ -1,6 +1,6 @@
+ package net.minecraft.server;
+ 
+-import com.google.common.base.Objects;
++import com.google.common.base.MoreObjects; // KigPaper
+ import com.google.common.base.Predicate;
+ import java.util.Iterator;
+ import java.util.Random;
+@@ -113,7 +113,7 @@ public class BlockTripwireHook extends Block {
+                 flag5 = false;
+             } else {
+                 if (k == i) {
+-                    iblockdata2 = (IBlockData) Objects.firstNonNull(iblockdata1, iblockdata2);
++                    iblockdata2 = (IBlockData) MoreObjects.firstNonNull(iblockdata1, iblockdata2); // KigPaper
+                 }
+ 
+                 boolean flag7 = !((Boolean) iblockdata2.get(BlockTripwire.DISARMED)).booleanValue();
+diff --git a/src/main/java/net/minecraft/server/EntitySlice.java b/src/main/java/net/minecraft/server/EntitySlice.java
+index ae6c52f2c..75be862a4 100644
+--- a/src/main/java/net/minecraft/server/EntitySlice.java
++++ b/src/main/java/net/minecraft/server/EntitySlice.java
+@@ -5,6 +5,7 @@ import com.google.common.collect.Lists;
+ import com.google.common.collect.Maps;
+ import com.google.common.collect.Sets;
+ import java.util.AbstractSet;
++import java.util.Collections; // KigPaper
+ import java.util.Iterator;
+ import java.util.List;
+ import java.util.Map;
+@@ -114,7 +115,7 @@ public class EntitySlice<T> extends AbstractSet<T> {
+                 List list = (List) EntitySlice.this.b.get(EntitySlice.this.b(oclass));
+ 
+                 if (list == null) {
+-                    return Iterators.emptyIterator();
++                    return Collections.emptyIterator(); // KigPaper
+                 } else {
+                     Iterator iterator = list.iterator();
+ 
+@@ -125,7 +126,7 @@ public class EntitySlice<T> extends AbstractSet<T> {
+     }
+ 
+     public Iterator<T> iterator() {
+-        return this.e.isEmpty() ? Iterators.<T>emptyIterator() : Iterators.unmodifiableIterator(this.e.iterator());
++        return this.e.isEmpty() ? Collections.emptyIterator() : Iterators.unmodifiableIterator(this.e.iterator()); // KigPaper
+     }
+ 
+     public int size() {
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 1a571d136..2c590403d 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -1592,7 +1592,7 @@ public abstract class MinecraftServer implements Runnable, ICommandListener, IAs
+             try {
+                 return Futures.immediateFuture(callable.call());
+             } catch (Exception exception) {
+-                return Futures.immediateFailedCheckedFuture(exception);
++                return Futures.immediateFailedFuture(exception); // KigPaper
+             }
+         }
+     }
+diff --git a/src/main/java/net/minecraft/server/PacketPlayOutPlayerInfo.java b/src/main/java/net/minecraft/server/PacketPlayOutPlayerInfo.java
+index 50300bff9..bc6b1ed74 100644
+--- a/src/main/java/net/minecraft/server/PacketPlayOutPlayerInfo.java
++++ b/src/main/java/net/minecraft/server/PacketPlayOutPlayerInfo.java
+@@ -1,6 +1,6 @@
+ package net.minecraft.server;
+ 
+-import com.google.common.base.Objects;
++import com.google.common.base.MoreObjects; // KigPaper
+ import com.google.common.collect.Lists;
+ import com.mojang.authlib.GameProfile;
+ import com.mojang.authlib.properties.Property;
+@@ -254,7 +254,7 @@ public class PacketPlayOutPlayerInfo implements Packet<PacketListenerPlayOut> {
+     }
+ 
+     public String toString() {
+-        return Objects.toStringHelper(this).add("action", this.a).add("entries", this.b).toString();
++        return MoreObjects.toStringHelper(this).add("action", this.a).add("entries", this.b).toString(); // KigPaper
+     }
+     /* KigPaper - fix compile error
+     public void a(PacketListener packetlistener) {
+@@ -340,7 +340,7 @@ public class PacketPlayOutPlayerInfo implements Packet<PacketListenerPlayOut> {
+         }
+ 
+         public String toString() {
+-            return Objects.toStringHelper(this).add("latency", this.b).add("gameMode", this.c).add("profile", this.d).add("displayName", this.e == null ? null : IChatBaseComponent.ChatSerializer.a(this.e)).toString();
++            return MoreObjects.toStringHelper(this).add("latency", this.b).add("gameMode", this.c).add("profile", this.d).add("displayName", this.e == null ? null : IChatBaseComponent.ChatSerializer.a(this.e)).toString(); // KigPaper
+         }
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index f7a1f322e..6c3e46902 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -6,9 +6,12 @@ import com.avaje.ebean.config.dbplatform.SQLitePlatform;
+ import com.avaje.ebeaninternal.server.lib.sql.TransactionIsolation;
+ import com.google.common.base.Charsets;
+ import com.google.common.base.Function;
++// KigPaper Start
++import com.google.common.cache.Cache;
++import com.google.common.cache.CacheBuilder;
++// KigPaper End
+ import com.google.common.collect.ImmutableList;
+ import com.google.common.collect.Lists;
+-import com.google.common.collect.MapMaker;
+ import com.mojang.authlib.GameProfile;
+ import dev.rocco.kig.paper.api.skin.SkinCache;
+ import dev.rocco.kig.paper.api.velocity.KnockbackValues;
+@@ -101,7 +104,7 @@ public final class CraftServer implements Server {
+     private YamlConfiguration configuration;
+     private YamlConfiguration commandsConfiguration;
+     private final Yaml yaml = new Yaml(new SafeConstructor());
+-    private final Map<UUID, OfflinePlayer> offlinePlayers = new MapMaker().softValues().makeMap();
++    private final Cache<UUID, OfflinePlayer> offlinePlayers = CacheBuilder.newBuilder().softValues().build(); // KigPaper
+     /*
+     private final EntityMetadataStore entityMetadata = new EntityMetadataStore();
+     private final PlayerMetadataStore playerMetadata = new PlayerMetadataStore();
+@@ -1349,7 +1352,7 @@ public final class CraftServer implements Server {
+                 result = getOfflinePlayer(profile);
+             }
+         } else {
+-            offlinePlayers.remove(result.getUniqueId());
++            offlinePlayers.invalidate(result.getUniqueId()); // KigPaper
+         }
+ 
+         return result;
+@@ -1361,13 +1364,13 @@ public final class CraftServer implements Server {
+ 
+         OfflinePlayer result = getPlayer(id);
+         if (result == null) {
+-            result = offlinePlayers.get(id);
++            result = offlinePlayers.getIfPresent(id); // KigPaper
+             if (result == null) {
+                 result = new CraftOfflinePlayer(this, new GameProfile(id, null));
+                 offlinePlayers.put(id, result);
+             }
+         } else {
+-            offlinePlayers.remove(id);
++            offlinePlayers.invalidate(id); // KigPaper
+         }
+ 
+         return result;
+-- 
+2.35.1
+
