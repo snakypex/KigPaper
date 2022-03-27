@@ -1,0 +1,31 @@
+diff --git a/src/main/java/net/minecraft/server/BlockStateList.java b/src/main/java/net/minecraft/server/BlockStateList.java
+index 8a815a64c..9823bf2e0 100644
+--- a/src/main/java/net/minecraft/server/BlockStateList.java
++++ b/src/main/java/net/minecraft/server/BlockStateList.java
+@@ -2,7 +2,7 @@ package net.minecraft.server;
+ 
+ import com.google.common.base.Function;
+ import com.google.common.base.Joiner;
+-import com.google.common.base.Objects;
++import com.google.common.base.MoreObjects; // KigPaper
+ import com.google.common.collect.HashBasedTable;
+ import com.google.common.collect.ImmutableList;
+ import com.google.common.collect.ImmutableMap;
+@@ -101,7 +101,7 @@ public class BlockStateList {
+     }
+ 
+     public String toString() {
+-        return Objects.toStringHelper(this).add("block", Block.REGISTRY.c(this.c)).add("properties", Iterables.transform(this.d, BlockStateList.b)).toString();
++        return MoreObjects.toStringHelper(this).add("block", Block.REGISTRY.c(this.c)).add("properties", Iterables.transform(this.d, BlockStateList.b)).toString(); // KigPaper
+     }
+ 
+     static class BlockData extends BlockDataAbstract {
+@@ -123,7 +123,7 @@ public class BlockStateList {
+             if (!this.b.containsKey(iblockstate)) {
+                 throw new IllegalArgumentException("Cannot get property " + iblockstate + " as it does not exist in " + this.a.P());
+             } else {
+-                return (Comparable) iblockstate.b().cast(this.b.get(iblockstate));
++                return iblockstate.b().cast(this.b.get(iblockstate)); // KigPaper
+             }
+         }
+ 

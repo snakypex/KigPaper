@@ -1,0 +1,21 @@
+diff --git a/src/main/java/net/minecraft/server/StructureBoundingBox.java b/src/main/java/net/minecraft/server/StructureBoundingBox.java
+index d6c2aac9f..d9f557e62 100644
+--- a/src/main/java/net/minecraft/server/StructureBoundingBox.java
++++ b/src/main/java/net/minecraft/server/StructureBoundingBox.java
+@@ -1,6 +1,6 @@
+ package net.minecraft.server;
+ 
+-import com.google.common.base.Objects;
++import com.google.common.base.MoreObjects; // KigPaper
+ 
+ public class StructureBoundingBox {
+ 
+@@ -139,7 +139,7 @@ public class StructureBoundingBox {
+     }
+ 
+     public String toString() {
+-        return Objects.toStringHelper(this).add("x0", this.a).add("y0", this.b).add("z0", this.c).add("x1", this.d).add("y1", this.e).add("z1", this.f).toString();
++        return MoreObjects.toStringHelper(this).add("x0", this.a).add("y0", this.b).add("z0", this.c).add("x1", this.d).add("y1", this.e).add("z1", this.f).toString(); // KigPaper
+     }
+ 
+     public NBTTagIntArray g() {
