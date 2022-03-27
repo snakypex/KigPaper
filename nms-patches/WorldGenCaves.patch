@@ -1,0 +1,22 @@
+diff --git a/src/main/java/net/minecraft/server/WorldGenCaves.java b/src/main/java/net/minecraft/server/WorldGenCaves.java
+index 2cdd02378..f68019a29 100644
+--- a/src/main/java/net/minecraft/server/WorldGenCaves.java
++++ b/src/main/java/net/minecraft/server/WorldGenCaves.java
+@@ -1,6 +1,6 @@
+ package net.minecraft.server;
+ 
+-import com.google.common.base.Objects;
++import com.google.common.base.MoreObjects; // KigPaper
+ import java.util.Random;
+ 
+ public class WorldGenCaves extends WorldGenBase {
+@@ -140,7 +140,8 @@ public class WorldGenCaves extends WorldGenBase {
+ 
+                                         if (d14 > -0.7D && d12 * d12 + d14 * d14 + d13 * d13 < 1.0D) {
+                                             IBlockData iblockdata1 = chunksnapshot.a(j3, j4, i4);
+-                                            IBlockData iblockdata2 = (IBlockData) Objects.firstNonNull(chunksnapshot.a(j3, j4 + 1, i4), Blocks.AIR.getBlockData());
++                                            IBlockData iblockdata2 =
++                                                MoreObjects.firstNonNull(chunksnapshot.a(j3, j4 + 1, i4), Blocks.AIR.getBlockData()); // KigPaper
+ 
+                                             if (iblockdata1.getBlock() == Blocks.GRASS || iblockdata1.getBlock() == Blocks.MYCELIUM) {
+                                                 flag3 = true;

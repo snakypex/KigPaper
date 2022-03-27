@@ -1,0 +1,32 @@
+diff --git a/src/main/java/net/minecraft/server/ShapeDetector.java b/src/main/java/net/minecraft/server/ShapeDetector.java
+index 325dcc6ae..8aa0bf9fe 100644
+--- a/src/main/java/net/minecraft/server/ShapeDetector.java
++++ b/src/main/java/net/minecraft/server/ShapeDetector.java
+@@ -1,6 +1,6 @@
+ package net.minecraft.server;
+ 
+-import com.google.common.base.Objects;
++import com.google.common.base.MoreObjects; // KigPaper
+ import com.google.common.base.Predicate;
+ import com.google.common.cache.CacheBuilder;
+ import com.google.common.cache.CacheLoader;
+@@ -146,7 +146,7 @@ public class ShapeDetector {
+         }
+ 
+         public String toString() {
+-            return Objects.toStringHelper(this).add("up", this.c).add("forwards", this.b).add("frontTopLeft", this.a).toString();
++            return MoreObjects.toStringHelper(this).add("up", this.c).add("forwards", this.b).add("frontTopLeft", this.a).toString(); // KigPaper
+         }
+     }
+ 
+@@ -164,7 +164,9 @@ public class ShapeDetector {
+             return new ShapeDetectorBlock(this.a, blockposition, this.b);
+         }
+ 
+-        public Object load(Object object) throws Exception {
++        // KigPaper
++        @Override
++        public ShapeDetectorBlock load(BlockPosition object) throws Exception {
+             return this.a((BlockPosition) object);
+         }
+     }
