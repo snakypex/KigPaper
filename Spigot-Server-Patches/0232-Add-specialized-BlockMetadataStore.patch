@@ -1,0 +1,316 @@
+From f23c6d75555bd13fe5d17c45875dcd3639106b73 Mon Sep 17 00:00:00 2001
+From: RoccoDev <hey@rocco.dev>
+Date: Fri, 1 Apr 2022 00:54:39 +0200
+Subject: [PATCH] Add specialized BlockMetadataStore
+
+
+diff --git a/pom.xml b/pom.xml
+index f4047f9a5..8ca3bbe07 100644
+--- a/pom.xml
++++ b/pom.xml
+@@ -120,6 +120,12 @@
+             <artifactId>log4j-core</artifactId>
+             <version>2.17.1</version>
+         </dependency>
++        <dependency>
++            <groupId>org.mockito</groupId>
++            <artifactId>mockito-core</artifactId>
++            <version>4.4.0</version>
++            <scope>test</scope>
++        </dependency>
+         <!-- // KigPaper end -->
+     </dependencies>
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 949c58a41..0f218a046 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -42,6 +42,7 @@ import org.bukkit.craftbukkit.block.CraftBlockState;
+ import org.bukkit.craftbukkit.entity.*;
+ import org.bukkit.craftbukkit.inventory.CraftItemStack;
+ import org.bukkit.craftbukkit.metadata.BlockMetadataStore;
++import org.bukkit.craftbukkit.metadata.SpecializedBlockMetadataStore;
+ import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+ import org.bukkit.craftbukkit.util.LongHash;
+ import org.bukkit.entity.*;
+@@ -56,6 +57,7 @@ import org.bukkit.event.world.SpawnChangeEvent;
+ import org.bukkit.generator.BlockPopulator;
+ import org.bukkit.generator.ChunkGenerator;
+ import org.bukkit.inventory.ItemStack;
++import org.bukkit.metadata.MetadataStore;
+ import org.bukkit.metadata.MetadataValue;
+ import org.bukkit.plugin.Plugin;
+ import org.bukkit.plugin.messaging.StandardMessenger;
+@@ -71,7 +73,10 @@ public class CraftWorld implements World {
+     private final CraftServer server = (CraftServer) Bukkit.getServer();
+     private final ChunkGenerator generator;
+     private final List<BlockPopulator> populators = new ArrayList<BlockPopulator>();
+-    private final BlockMetadataStore blockMetadata = new BlockMetadataStore(this);
++    // KigPaper start
++    //private final BlockMetadataStore blockMetadata = new BlockMetadataStore(this);
++    private final MetadataStore<Block> blockMetadata = new SpecializedBlockMetadataStore(this);
++    // KigPaper end
+     private int monsterSpawn = -1;
+     private int animalSpawn = -1;
+     private int waterAnimalSpawn = -1;
+@@ -862,7 +867,7 @@ public class CraftWorld implements World {
+         return Difficulty.getByValue(this.getHandle().getDifficulty().ordinal());
+     }
+ 
+-    public BlockMetadataStore getBlockMetadata() {
++    public MetadataStore<Block> getBlockMetadata() { // KigPaper - change type
+         return blockMetadata;
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/metadata/SpecializedBlockMetadataStore.java b/src/main/java/org/bukkit/craftbukkit/metadata/SpecializedBlockMetadataStore.java
+new file mode 100644
+index 000000000..3f2a13b89
+--- /dev/null
++++ b/src/main/java/org/bukkit/craftbukkit/metadata/SpecializedBlockMetadataStore.java
+@@ -0,0 +1,175 @@
++package org.bukkit.craftbukkit.metadata;
++
++import com.google.common.base.Objects;
++import com.google.common.base.Preconditions;
++import com.google.common.collect.ImmutableList;
++import org.bukkit.Location;
++import org.bukkit.World;
++import org.bukkit.block.Block;
++import org.bukkit.metadata.MetadataStore;
++import org.bukkit.metadata.MetadataValue;
++import org.bukkit.plugin.Plugin;
++
++import java.util.*;
++
++/**
++ * An alternative to {@link BlockMetadataStore} that uses specialized collections and bit-packing for faster
++ * operations and a lower memory footprint.
++ *
++ * <p>This can be a drop-in replacement, though keep in mind methods will throw an {@link IllegalArgumentException}
++ * if invalid block coordinates are provided.
++ */
++public class SpecializedBlockMetadataStore implements MetadataStore<Block> {
++    // Allows storing 25 bits (up to 33,554,432 - MC supports up to 30,000,000) + sign
++    private static final int MASK_26_BITS = 0b111_111_111_111_111_111_111_111_11;
++
++    private final Map<StoreKey, Map<Plugin, MetadataValue>> metadata = new HashMap<>();
++    private final World owningWorld;
++
++    // Cached key used for (synchronized) lookups, saves allocations.
++    // The key stored inside is usually cleared after use, so that the reference doesn't live too long.
++    private final StoreKey cachedKey = new StoreKey(null, 0);
++
++    public SpecializedBlockMetadataStore(World owningWorld) {
++        this.owningWorld = owningWorld;
++    }
++
++    @Override
++    public synchronized List<MetadataValue> getMetadata(Block block, String metadataKey) {
++        Preconditions.checkArgument(block.getWorld() == owningWorld, "block is from another world");
++
++        List<MetadataValue> list = Collections.emptyList();
++        Map<Plugin, MetadataValue> pluginMetadata = getEntry(metadataKey, block);
++        if (pluginMetadata == null) {
++            return list;
++        }
++        list = ImmutableList.copyOf(pluginMetadata.values());
++
++        return list;
++    }
++
++    @Override
++    public synchronized boolean hasMetadata(Block block, String metadataKey) {
++        Preconditions.checkArgument(block.getWorld() == owningWorld, "block is from another world");
++        Map<Plugin, MetadataValue> pluginMetadata = getEntry(metadataKey, block);
++        return pluginMetadata != null && !pluginMetadata.isEmpty();
++    }
++
++    @Override
++    public synchronized void removeMetadata(Block block, String metadataKey, Plugin owningPlugin) {
++        Preconditions.checkArgument(block.getWorld() == owningWorld, "block is from another world");
++        Preconditions.checkNotNull(owningPlugin, "plugin is null");
++
++        long id = getBlockId(block);
++        Map<Plugin, MetadataValue> pluginMetadata = getEntry(metadataKey, id);
++        if (pluginMetadata == null) {
++            return;
++        }
++        // Clear empty entries
++        if (pluginMetadata.remove(owningPlugin) != null && pluginMetadata.isEmpty()) {
++            StoreKey key = getCachedKey(metadataKey, id);
++            this.metadata.remove(key);
++            key.metadataKey = null;
++        }
++    }
++
++    @Override
++    public synchronized void setMetadata(Block block, String metadataKey, MetadataValue newMetadataValue) {
++        Preconditions.checkArgument(block.getWorld() == owningWorld, "block is from another world");
++        Preconditions.checkNotNull(newMetadataValue, "value is null");
++        Plugin owningPlugin = newMetadataValue.getOwningPlugin();
++        Preconditions.checkNotNull(owningPlugin, "plugin is null");
++
++        Map<Plugin, MetadataValue> entry = metadata.computeIfAbsent(new StoreKey(metadataKey, getBlockId(block)),
++                k -> new WeakHashMap<>(1));
++        entry.put(owningPlugin, newMetadataValue);
++    }
++
++    @Override
++    public synchronized void invalidateAll(Plugin owningPlugin) {
++        Preconditions.checkNotNull(owningPlugin, "plugin is null");
++        for (Map<Plugin, MetadataValue> values : metadata.values()) {
++            MetadataValue value = values.get(owningPlugin);
++            if (value != null) {
++                value.invalidate();
++            }
++        }
++    }
++
++    private Map<Plugin, MetadataValue> getEntry(String key, Block block) {
++        return getEntry(key, getBlockId(block));
++    }
++
++    private Map<Plugin, MetadataValue> getEntry(String key, long id) {
++        StoreKey storeKey = getCachedKey(key, id);
++        Map<Plugin, MetadataValue> ret = metadata.get(storeKey);
++        storeKey.metadataKey = null;
++        return ret;
++    }
++
++    private StoreKey getCachedKey(String metadataKey, long id) {
++        cachedKey.block = id;
++        cachedKey.metadataKey = metadataKey;
++        return cachedKey;
++    }
++
++    static long getBlockId(Block block) {
++        int x = block.getX();
++        int y = block.getY();
++        int z = block.getZ();
++        Preconditions.checkArgument(x >= -30_000_000 && x <= 30_000_000,
++                "block X out of range");
++        Preconditions.checkArgument(y >= 0 && y <= 255, "block Y out of range");
++        Preconditions.checkArgument(z >= -30_000_000 && z <= 30_000_000,
++                "block Z out of range");
++        // X (26 bits) + Y (8 bits) + Z (26 bits)
++        return ((long) (x & MASK_26_BITS) << 34) | ((long) (y & 0xFF) << 26) | (z & MASK_26_BITS);
++    }
++
++    /**
++     * Used for tests.
++     */
++    static Location toLocation(World world, long id) {
++        int x = (int) (id >> 34);
++        int y = (int) ((id >> 26) & 0xFF);
++        int z = (int) id;
++
++        // Restore sign
++        if ((x & (1 << 25)) > 0) {
++            x |= ~MASK_26_BITS;
++        } else {
++            x &= MASK_26_BITS;
++        }
++
++        if ((z & (1 << 25)) > 0) {
++            z |= ~MASK_26_BITS;
++        } else {
++            z &= MASK_26_BITS;
++        }
++
++        return new Location(world, x, y, z);
++    }
++
++    private static class StoreKey {
++        private String metadataKey;
++        private long block;
++
++        private StoreKey(String metadataKey, long block) {
++            this.metadataKey = metadataKey;
++            this.block = block;
++        }
++
++        @Override
++        public boolean equals(Object o) {
++            if (this == o) return true;
++            if (o == null || getClass() != o.getClass()) return false;
++            StoreKey storeKey = (StoreKey) o;
++            return block == storeKey.block && Objects.equal(metadataKey, storeKey.metadataKey);
++        }
++
++        @Override
++        public int hashCode() {
++            return Objects.hashCode(metadataKey, block);
++        }
++    }
++}
+diff --git a/src/test/java/org/bukkit/craftbukkit/metadata/BlockMetadataTest.java b/src/test/java/org/bukkit/craftbukkit/metadata/BlockMetadataTest.java
+new file mode 100644
+index 000000000..5f99fcfe9
+--- /dev/null
++++ b/src/test/java/org/bukkit/craftbukkit/metadata/BlockMetadataTest.java
+@@ -0,0 +1,62 @@
++package org.bukkit.craftbukkit.metadata;
++
++import org.bukkit.Location;
++import org.bukkit.block.Block;
++import org.bukkit.metadata.FixedMetadataValue;
++import org.bukkit.metadata.MetadataStore;
++import org.bukkit.metadata.MetadataValue;
++import org.bukkit.plugin.Plugin;
++import org.junit.Assert;
++import org.junit.Test;
++import org.mockito.Mockito;
++
++import java.util.List;
++
++public class BlockMetadataTest {
++    @Test
++    public void oldNewComparison() {
++        MetadataStore<Block> oldStore = new BlockMetadataStore(null);
++        MetadataStore<Block> newStore = new SpecializedBlockMetadataStore(null);
++        Plugin plugin = Mockito.mock(Plugin.class);
++
++        for (int x = 2, y = 0, z = 2, i = 0; i < 20; i++, x += 300, z += 200, y += 10) {
++            Block block = makeBlock(i % 2 == 0 ? x : -x, y, i % 2 == 0 ? z : -z);
++            MetadataValue value = new FixedMetadataValue(plugin, i);
++
++            oldStore.setMetadata(block, "test", value);
++            oldStore.setMetadata(block, "test" + i, value);
++            newStore.setMetadata(block, "test", value);
++            newStore.setMetadata(block, "test" + i, value);
++
++            Assert.assertTrue(newStore.hasMetadata(block, "test"));
++            Assert.assertTrue(newStore.hasMetadata(block, "test" + i));
++
++            List<MetadataValue> test = newStore.getMetadata(block, "test");
++            Assert.assertEquals(test, oldStore.getMetadata(block, "test"));
++            Assert.assertTrue("value in newStore[\"test\"]", test.contains(value));
++
++            List<MetadataValue> indexTest = newStore.getMetadata(block, "test" + i);
++            Assert.assertEquals(indexTest, oldStore.getMetadata(block, "test" + i));
++            Assert.assertTrue("value in newStore[\"test\" + i]", indexTest.contains(value));
++        }
++    }
++
++    @Test
++    public void compareIds() {
++        for (int x = 3, y = 1, z = 2, i = 0; i < 20; i++, x += 300, z += 200, y += 10) {
++            Block block = makeBlock(i % 2 == 0 ? x : -x, y, i % 2 == 0 ? z : -z);
++            Location location = new Location(null, block.getX(), block.getY(), block.getZ());
++
++            Assert.assertEquals(location, SpecializedBlockMetadataStore.toLocation(null,
++                    SpecializedBlockMetadataStore.getBlockId(block)));
++        }
++    }
++
++    private static Block makeBlock(int x, int y, int z) {
++        Block block = Mockito.mock(Block.class);
++        Mockito.when(block.getX()).thenReturn(x);
++        Mockito.when(block.getY()).thenReturn(y);
++        Mockito.when(block.getZ()).thenReturn(z);
++        return block;
++    }
++}
+-- 
+2.35.1
+
