@@ -49,6 +49,11 @@
             <artifactId>jopt-simple</artifactId>
             <version>5.0.4</version>
         </dependency>
+        <dependency>
+            <groupId>org.openjdk.jol</groupId>
+            <artifactId>jol-core</artifactId>
+            <version>0.16</version>
+        </dependency>
     </dependencies>
 
     <!-- This builds a completely 'ready to start' jar with all dependencies inside -->
@@ -95,6 +100,10 @@
                         <relocation>
                             <pattern>net.minecraft.server.v1_8_R3</pattern>
                             <shadedPattern>net.minecraft.server</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>org.bukkit.craftbukkit.v1_8_R3</pattern>
+                            <shadedPattern>org.bukkit.craftbukkit</shadedPattern>
                         </relocation>
                     </relocations>
                 </configuration>

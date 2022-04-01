@@ -21,7 +21,10 @@ Once it's done, you'll have a `Paperclip.jar` file in the project directory.
 ### Running benchmarks
 To run benchmarks, first build the server normally, then run these commands:
 ```shell
-mvn install -P benchmarks
+# Run these two commands sequentially, not together
+mvn compile -P benchmarks
+mvn package -P benchmarks
+
 java -jar Benchmarks/target/paper-benchmarks.jar
 ```
 
