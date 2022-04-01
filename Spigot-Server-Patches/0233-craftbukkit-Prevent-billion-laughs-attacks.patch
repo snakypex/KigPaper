@@ -1,0 +1,64 @@
+From b7efa7fef1abd8de59130bd771e16ef4d421c62c Mon Sep 17 00:00:00 2001
+From: Archer <archer@beezig.eu>
+Date: Fri, 1 Apr 2022 19:30:37 +0200
+Subject: [PATCH] craftbukkit: Prevent billion-laughs attacks
+
+This commit uses the updated snake-yaml version 1.30 to limit the
+maximum number of aliases for collections in permission loading.
+While the permission configuration is very unlikely to contain
+untrusted data, this patch prevents billion-laughs attacks in it anyway.
+
+With this change, permission specifications can only load a maximum of
+32 aliases for collections. Like the change in API, this does *not*
+prevent attacks on plugin-created org.yaml.snakeyaml.Yaml instances if
+they don't use LoaderOptions to limit aliases themselves.
+
+Related-CVE: CVE-2017-18640
+Related: https://en.wikipedia.org/wiki/Billion_laughs_attack#Variations
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 6c3e4690..126bd3c9 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -74,6 +74,10 @@ import org.bukkit.potion.PotionEffectType;
+ import org.bukkit.scheduler.BukkitWorker;
+ import org.bukkit.util.StringUtil;
+ import org.bukkit.util.permissions.DefaultPermissions;
++// KigPaper start - CVE-2017-18640
++import org.yaml.snakeyaml.DumperOptions;
++import org.yaml.snakeyaml.LoaderOptions;
++// KigPaper end
+ import org.yaml.snakeyaml.Yaml;
+ import org.yaml.snakeyaml.constructor.SafeConstructor;
+ import org.yaml.snakeyaml.error.MarkedYAMLException;
+@@ -85,6 +89,7 @@ import java.util.*;
+ import java.util.logging.Level;
+ import java.util.logging.Logger;
+ import java.util.regex.Pattern;
++import org.yaml.snakeyaml.representer.Representer; // KigPaper - CVE-2017-18640
+ 
+ public final class CraftServer implements Server {
+     private static final Player[] EMPTY_PLAYER_ARRAY = new Player[0];
+@@ -103,7 +108,10 @@ public final class CraftServer implements Server {
+     private final Map<String, World> worlds = new LinkedHashMap<String, World>();
+     private YamlConfiguration configuration;
+     private YamlConfiguration commandsConfiguration;
+-    private final Yaml yaml = new Yaml(new SafeConstructor());
++    // KigPaper start - CVE-2017-18640
++    private final LoaderOptions loaderOptions = new LoaderOptions();
++    private final Yaml yaml = new Yaml(new SafeConstructor(), new Representer(), new DumperOptions(), loaderOptions);
++    // KigPaper end
+     private final Cache<UUID, OfflinePlayer> offlinePlayers = CacheBuilder.newBuilder().softValues().build(); // KigPaper
+     /*
+     private final EntityMetadataStore entityMetadata = new EntityMetadataStore();
+@@ -143,6 +151,7 @@ public final class CraftServer implements Server {
+     }
+ 
+     public CraftServer(MinecraftServer console, PlayerList playerList) {
++        loaderOptions.setMaxAliasesForCollections(32); // KigPaper - CVE-2017-18640
+         this.console = console;
+         this.playerList = (DedicatedPlayerList) playerList;
+         this.playerView = Collections.unmodifiableList(Lists.transform(playerList.players, new Function<EntityPlayer, CraftPlayer>() {
+-- 
+2.35.1
+

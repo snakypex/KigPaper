@@ -1,0 +1,110 @@
+From 9e8cf208d777a63772240b549c6c99687a5141f0 Mon Sep 17 00:00:00 2001
+From: Archer <archer@beezig.eu>
+Date: Fri, 1 Apr 2022 19:19:17 +0200
+Subject: [PATCH] security: Prevent billion-laughs attacks
+
+This commit updates snake-yaml to the latest version (as of 2022-04-01).
+Version 1.30 contains a loading configuration option that can limit
+the maximum number of aliases for collections to prevent DOS attacks
+when parsing untrusted YAML files early.
+
+With this change, plugin descriptions and YamlConfigurations can only
+load a maximum of 32 aliases for collections. This should prevent
+attacks with malicious configuration files, but it does *not* prevent
+attacks on plugin-created org.yaml.snakeyaml.Yaml instances if they
+don't use LoaderOptions to limit aliases themselves.
+
+Nevertheless, with the update snake-yaml dependency, it's now possible
+for users to easily prevent this attack by using the new API to fail
+early when a YAML file contains too many aliases.
+
+Related-CVE: CVE-2017-18640
+Related: https://en.wikipedia.org/wiki/Billion_laughs_attack#Variations
+
+diff --git a/pom.xml b/pom.xml
+index 8e88aa3a..7341ded0 100644
+--- a/pom.xml
++++ b/pom.xml
+@@ -89,7 +89,7 @@
+         <dependency>
+             <groupId>org.yaml</groupId>
+             <artifactId>snakeyaml</artifactId>
+-            <version>1.15</version>
++            <version>1.30</version> <!-- KigPaper - CVE-2017-18640 -->
+             <scope>compile</scope>
+         </dependency>
+         <dependency>
+diff --git a/src/main/java/org/bukkit/configuration/file/YamlConfiguration.java b/src/main/java/org/bukkit/configuration/file/YamlConfiguration.java
+index ea4c2b35..93676ae5 100644
+--- a/src/main/java/org/bukkit/configuration/file/YamlConfiguration.java
++++ b/src/main/java/org/bukkit/configuration/file/YamlConfiguration.java
+@@ -14,6 +14,7 @@ import org.bukkit.configuration.Configuration;
+ import org.bukkit.configuration.ConfigurationSection;
+ import org.bukkit.configuration.InvalidConfigurationException;
+ import org.yaml.snakeyaml.DumperOptions;
++import org.yaml.snakeyaml.LoaderOptions; // KigPaper - CVE-2017-18640
+ import org.yaml.snakeyaml.Yaml;
+ import org.yaml.snakeyaml.error.YAMLException;
+ import org.yaml.snakeyaml.representer.Representer;
+@@ -27,7 +28,14 @@ public class YamlConfiguration extends FileConfiguration {
+     protected static final String BLANK_CONFIG = "{}\n";
+     private final DumperOptions yamlOptions = new DumperOptions();
+     private final Representer yamlRepresenter = new YamlRepresenter();
+-    private final Yaml yaml = new Yaml(new YamlConstructor(), yamlRepresenter, yamlOptions);
++    // KigPaper start - CVE-2017-18640
++    LoaderOptions loaderOptions = new LoaderOptions();
++    private final Yaml yaml = new Yaml(new YamlConstructor(), yamlRepresenter, yamlOptions, loaderOptions);
++
++    {
++        loaderOptions.setMaxAliasesForCollections(32);
++    }
++    // KigPaper end
+ 
+     @Override
+     public String saveToString() {
+diff --git a/src/main/java/org/bukkit/plugin/PluginDescriptionFile.java b/src/main/java/org/bukkit/plugin/PluginDescriptionFile.java
+index 7676b3c9..06467a37 100644
+--- a/src/main/java/org/bukkit/plugin/PluginDescriptionFile.java
++++ b/src/main/java/org/bukkit/plugin/PluginDescriptionFile.java
+@@ -14,6 +14,10 @@ import org.bukkit.plugin.java.JavaPlugin;
+ import org.bukkit.permissions.Permissible;
+ import org.bukkit.permissions.Permission;
+ import org.bukkit.permissions.PermissionDefault;
++// KigPaper start - CVE-2017-18640
++import org.yaml.snakeyaml.DumperOptions;
++import org.yaml.snakeyaml.LoaderOptions;
++// KigPaper end
+ import org.yaml.snakeyaml.Yaml;
+ import org.yaml.snakeyaml.constructor.AbstractConstruct;
+ import org.yaml.snakeyaml.constructor.SafeConstructor;
+@@ -23,6 +27,7 @@ import org.yaml.snakeyaml.nodes.Tag;
+ import com.google.common.collect.ImmutableList;
+ import com.google.common.collect.ImmutableMap;
+ import com.google.common.collect.ImmutableSet;
++import org.yaml.snakeyaml.representer.Representer; // KigPaper - CVE-2017-18640
+ 
+ /**
+  * This type is the runtime-container for the information in the plugin.yml.
+@@ -177,6 +182,10 @@ public final class PluginDescriptionFile {
+     private static final ThreadLocal<Yaml> YAML = new ThreadLocal<Yaml>() {
+         @Override
+         protected Yaml initialValue() {
++            // KigPaper start - CVE-2017-18640
++            LoaderOptions loadingConfig = new LoaderOptions();
++            loadingConfig.setMaxAliasesForCollections(32);
++            // KigPaper end
+             return new Yaml(new SafeConstructor() {
+                 {
+                     yamlConstructors.put(null, new AbstractConstruct() {
+@@ -204,7 +213,7 @@ public final class PluginDescriptionFile {
+                         });
+                     }
+                 }
+-            });
++            }, new Representer(), new DumperOptions(), loadingConfig); // KigPaper - CVE-2017-18640
+         }
+     };
+     String rawName = null;
+-- 
+2.35.1
+
