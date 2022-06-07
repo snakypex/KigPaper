@@ -1,0 +1,31 @@
+From e5c3fba28b9121faea23151c33f5999cb8d9195e Mon Sep 17 00:00:00 2001
+From: RoccoDev <hey@rocco.dev>
+Date: Tue, 7 Jun 2022 20:49:55 +0200
+Subject: [PATCH] Use effective name for health score updates
+
+This fixes health score updates for nicked players
+
+diff --git a/src/main/java/net/minecraft/server/EntityPlayer.java b/src/main/java/net/minecraft/server/EntityPlayer.java
+index fbcd389c..0170e706 100644
+--- a/src/main/java/net/minecraft/server/EntityPlayer.java
++++ b/src/main/java/net/minecraft/server/EntityPlayer.java
+@@ -355,10 +355,14 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
+                 while (iterator.hasNext()) {
+                     ScoreboardObjective scoreboardobjective = (ScoreboardObjective) iterator.next();
+ 
+-                    this.getScoreboard().getPlayerScoreForObjective(this.getName(), scoreboardobjective).updateForList(Arrays.asList(new EntityHuman[] { this}));
++                    // KigPaper - use effective name for nick support
++                    this.getScoreboard().getPlayerScoreForObjective(this.getBukkitEntity().getEffectiveName(),
++                            scoreboardobjective).updateForList(Collections.singletonList(this));
+                 }
+                 // CraftBukkit - Update ALL the scores!
+-                this.world.getServer().getScoreboardManager().updateAllScoresForList(IScoreboardCriteria.g, this.getName(), com.google.common.collect.ImmutableList.of(this));
++                // KigPaper - use effective name for nick support
++                this.world.getServer().getScoreboardManager().updateAllScoresForList(IScoreboardCriteria.g,
++                        this.getBukkitEntity().getEffectiveName(), Collections.singletonList(this));
+             }
+             // CraftBukkit start - Force max health updates
+             if (this.maxHealthCache != this.getMaxHealth()) {
+-- 
+2.36.1
+
