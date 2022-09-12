@@ -13,7 +13,7 @@ index b400ce04..2ac286bc 100644
  
      public String getServerModName() {
 -        return "PaperSpigot"; // PaperSpigot - PaperSpigot > // Spigot - Spigot > // CraftBukkit - cb > vanilla!
-+        return "KigPaper"; // PaperSpigot - PaperSpigot > // Spigot - Spigot > // CraftBukkit - cb > vanilla!
++        return "IcaSpigot - A best fork ever of Spigot"; // PaperSpigot - PaperSpigot > // Spigot - Spigot > // CraftBukkit - cb > vanilla!
      }
  
      public CrashReport b(CrashReport crashreport) {
